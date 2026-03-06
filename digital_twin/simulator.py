@@ -1,5 +1,39 @@
 import numpy as np
-import noise
+
+
+def _hash3(x, y, z, seed=0):
+    """Deterministic hash for 3D coordinates (pure NumPy, no C extensions)."""
+    n = np.sin(x * 12.9898 + y * 78.233 + z * 45.164 + seed) * 43758.5453
+    return n - np.floor(n)
+
+
+def _smoothstep(t):
+    """Smooth interpolation for organic noise."""
+    return t * t * (3.0 - 2.0 * t)
+
+
+def _pnoise3_numpy(x, y, z, scale, seed=42):
+    """Pure NumPy 3D noise (replaces noise.pnoise3 to avoid C++ build dependency)."""
+    xs, ys, zs = x * scale + seed, y * scale + seed, z * scale + seed
+    xi, yi, zi = np.floor(xs).astype(int), np.floor(ys).astype(int), np.floor(zs).astype(int)
+    xf, yf, zf = xs - xi, ys - yi, zs - zi
+    xf, yf, zf = _smoothstep(xf), _smoothstep(yf), _smoothstep(zf)
+    n000 = _hash3(xi, yi, zi, seed)
+    n100 = _hash3(xi + 1, yi, zi, seed)
+    n010 = _hash3(xi, yi + 1, zi, seed)
+    n110 = _hash3(xi + 1, yi + 1, zi, seed)
+    n001 = _hash3(xi, yi, zi + 1, seed)
+    n101 = _hash3(xi + 1, yi, zi + 1, seed)
+    n011 = _hash3(xi, yi + 1, zi + 1, seed)
+    n111 = _hash3(xi + 1, yi + 1, zi + 1, seed)
+    nx00 = n000 * (1 - xf) + n100 * xf
+    nx10 = n010 * (1 - xf) + n110 * xf
+    nx01 = n001 * (1 - xf) + n101 * xf
+    nx11 = n011 * (1 - xf) + n111 * xf
+    nxy0 = nx00 * (1 - yf) + nx10 * yf
+    nxy1 = nx01 * (1 - yf) + nx11 * yf
+    return nxy0 * (1 - zf) + nxy1 * zf
+
 
 class UterusDigitalTwin:
     """
@@ -54,17 +88,12 @@ class UterusDigitalTwin:
         return self.state
 
     def _apply_organic_noise(self, x, y, z, scale, octaves=4, seed=42):
-        """Applies 3D simplex/perlin noise displacement to vertices for organic realism."""
-        shape = x.shape
-        x_flat, y_flat, z_flat = x.flatten(), y.flatten(), z.flatten()
-        noise_vals = np.zeros_like(x_flat)
-        for i in range(len(x_flat)):
-            # Use pnoise3 for 3D coordinate sampling
-            noise_vals[i] = noise.pnoise3(x_flat[i]*scale + seed, 
-                                          y_flat[i]*scale + seed, 
-                                          z_flat[i]*scale + seed, 
-                                          octaves=octaves)
-        return noise_vals.reshape(shape)
+        """Applies 3D noise displacement to vertices (pure NumPy, no C extensions)."""
+        out = np.zeros_like(x)
+        for o in range(octaves):
+            f = 2 ** o
+            out += _pnoise3_numpy(x, y, z, scale * f, seed + o * 17) / f
+        return out
 
     def generate_3d_scatter_data(self):
         """
