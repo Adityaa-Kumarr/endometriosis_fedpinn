@@ -1,0 +1,16 @@
+torch>=2.0.0
+torchvision
+torchaudio
+flwr
+numpy
+pandas
+scikit-learn
+shap
+lime
+streamlit
+plotly
+matplotlib
+seaborn
+Flask
+waitress
+requests

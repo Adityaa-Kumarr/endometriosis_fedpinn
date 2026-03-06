@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fedpinn-server
+  labels:
+    app: fedpinn-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fedpinn-server
+  template:
+    metadata:
+      labels:
+        app: fedpinn-server
+    spec:
+      containers:
+      - name: fedpinn-svr
+        image: endo-fedpinn:latest
+        command: ["python", "federated/server.py", "3"]
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fedpinn-service
+spec:
+  selector:
+    app: fedpinn-server
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fedpinn-client
+  labels:
+    app: fedpinn-client
+spec:
+  replicas: 3 # Simulate 3 hospital nodes
+  selector:
+    matchLabels:
+      app: fedpinn-client
+  template:
+    metadata:
+      labels:
+        app: fedpinn-client
+    spec:
+      containers:
+      - name: fedpinn-cli
+        image: endo-fedpinn:latest
+        command: ["python", "federated/client.py", "1"] # All using client 1 data for simplicity in yaml
+        env:
+        - name: FLOWER_SERVER_URL
+          value: "fedpinn-service:8080"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fedpinn-dashboard
+  labels:
+    app: fedpinn-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fedpinn-dashboard
+  template:
+    metadata:
+      labels:
+        app: fedpinn-dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: endo-fedpinn:latest
+        command: ["streamlit", "run", "app.py", "--server.port=8501"]
+        ports:
+        - containerPort: 8501
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard-service
+spec:
+  selector:
+    app: fedpinn-dashboard
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 8501
+      targetPort: 8501
