@@ -16,6 +16,31 @@ from torch.utils.data import DataLoader
 def mock_ai_extract_to_df(text):
     """Advanced AI extraction agent pulling fields from unstructured medical text."""
     text_lower = text.lower()
+    
+    # --- Advanced Multi-Class Document Classifier ---
+    # Core categorization keywords (Strict Medical Context)
+    lab_keywords = ['lab result', 'blood test', 'serum', 'ca-125', 'estradiol', 'progesterone', 'cbc', 'assay', 'hemoglobin']
+    imaging_keywords = ['mri', 'ultrasound', 'radiology', 'transvaginal', 'lesion', 'nodule', 'cyst', 'pelvic scan', 'sonogram']
+    intake_keywords = ['patient', 'diagnosis', 'medical history', 'symptom', 'physician', 'hospital', 'gynecology', 'endometriosis', 'clinical']
+    
+    lab_score = sum(text_lower.count(kw) for kw in lab_keywords)
+    img_score = sum(text_lower.count(kw) for kw in imaging_keywords)
+    intake_score = sum(text_lower.count(kw) for kw in intake_keywords)
+    
+    total_medical_score = lab_score + img_score + intake_score
+    
+    classification = "Unknown"
+    if total_medical_score < 3 or (len(text_lower.split()) < 10):
+        st.error("❌ Classification: Non-Medical | The AI rejected this document as it lacks strict clinical context (e.g. Gaming PDF, Receipt).")
+        return None
+        
+    scores = {'Lab Results': lab_score, 'Imaging/Radiology Report': img_score, 'Clinical Intake': intake_score}
+    classification = max(scores, key=scores.get)
+    
+    # Render dynamic UI badge based on AI Classification
+    badge_colors = {'Lab Results': 'blue', 'Imaging/Radiology Report': 'violet', 'Clinical Intake': 'green'}
+    st.markdown(f"**AI Document Classification:** :{badge_colors[classification]}[{classification}] (Confidence: High)")
+        
     data = {}
     
     # Advanced flexible regex for fuzzy document parsing
@@ -47,7 +72,7 @@ def mock_ai_extract_to_df(text):
     if len(data.keys()) < 2:
        st.warning("⚠️ Document heavily obfuscated. AI fell back to partial physiological baseline extraction.")
        return pd.DataFrame([{'age': 32, 'bmi': 24.5, 'pelvic_pain_score': 8, 'dysmenorrhea_score': 7, 'ca125': 65.0, 'estradiol': 250.0}])
-    return pd.DataFrame([data])
+    return pd.DataFrame(data)
 
 # Append current directory to path so we can import modules
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -527,8 +552,9 @@ def main():
                         st.error("Unsupported file format.")
                         df = None
 
-                    if df is not None and not df.empty:
-                        df.columns = [str(c).lower().strip() for c in df.columns]
+                    if df is not None:
+                        if not df.empty:
+                            df.columns = [str(c).lower().strip() for c in df.columns]
                         
                         # Data validation to prevent sensor datasets from being parsed as clinical
                         c_kws = ['age', 'bmi', 'ca125', 'estradiol', 'pain']
@@ -557,10 +583,12 @@ def main():
                     st.error(f"Error parsing file: {e}")
 
             st.subheader("Clinical Parameters")
-            age = st.slider("Age", 18, 55, int(default_vals['age']))
-            bmi = st.number_input("BMI", 18.0, 40.0, float(default_vals['bmi']))
-            pelvic_pain = st.slider("Pelvic Pain Score (0-10)", 0, 10, int(default_vals['pain']))
-            dysmenorrhea = st.slider("Dysmenorrhea Score (0-10)", 0, 10, int(default_vals['dysmenorrhea']))
+            
+            # Use clamping to ensure extracted defaults never break the Streamlit UI limits
+            age = st.slider("Age", 0, 100, min(100, max(0, int(default_vals['age']))))
+            bmi = st.number_input("BMI", 0.0, 100.0, min(100.0, max(0.0, float(default_vals['bmi']))))
+            pelvic_pain = st.slider("Pelvic Pain Score (0-10)", 0, 10, min(10, max(0, int(default_vals['pain']))))
+            dysmenorrhea = st.slider("Dysmenorrhea Score (0-10)", 0, 10, min(10, max(0, int(default_vals['dysmenorrhea']))))
             
             col_a, col_b = st.columns(2)
             with col_a:
@@ -569,9 +597,9 @@ def main():
                 fam_hx = st.selectbox("Family History", [0, 1], format_func=lambda x: "Yes" if x else "No", index=int(default_vals['fam_hx']))
                 
             st.subheader("Biomarkers & Hormones")
-            ca125 = st.slider("CA-125 (U/mL)", 0.0, 150.0, float(default_vals['ca125']))
-            estradiol = st.slider("Estradiol (pg/mL)", 20.0, 500.0, float(default_vals['estradiol']))
-            prog = st.slider("Progesterone (ng/mL)", 0.0, 40.0, float(default_vals['progesterone']))
+            ca125 = st.slider("CA-125 (U/mL)", 0.0, 1000.0, min(1000.0, max(0.0, float(default_vals['ca125']))))
+            estradiol = st.slider("Estradiol (pg/mL)", 0.0, 2000.0, min(2000.0, max(0.0, float(default_vals['estradiol']))))
+            prog = st.slider("Progesterone (ng/mL)", 0.0, 200.0, min(200.0, max(0.0, float(default_vals['progesterone']))))
             
             clinical_data = np.array([[age, bmi, pelvic_pain, dysmenorrhea, dyspareunia, fam_hx, ca125, estradiol, prog]])
             st.caption("✨ AI estimates update in real-time as you adjust parameters.")
