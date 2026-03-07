@@ -33,6 +33,57 @@ endometriosis_fedpinn/
 
 ---
 
+## 📊 Endometriosis Digital Twin Dataset Collection
+
+**Prepared by:** chengalva yamini  
+**Objective:** This collection of medical datasets was carefully chosen to support the development of the Digital Twin system. The goal is to help detect endometriosis at an early stage and provide personalized insights for better understanding and treatment of the condition in women.
+
+### Primary Datasets Utilized
+
+1. **Uterus Computer Vision Dataset by Endometriosis (Roboflow)** `[Medical Imaging]`
+   - **Source:** [Roboflow Universe](https://universe.roboflow.com/endometriosis/uterus-hosuh/dataset/3/download)
+   - **Description:** Small set of uterus images with labels for early-stage model trials and learning experiments.
+
+2. **Psychological Wellbeing and Endometriosis** `[Patient Records]`
+   - **Source:** [Zenodo](https://zenodo.org/record/7878824)
+   - **Description:** Responses from women with endometriosis on stress, mental health, and daily life impact, adding holistic insight to the Digital Twin.
+
+3. **GLENDA v1.0 (Gynecologic Datasets)** `[Medical Imaging]`
+   - **Source:** [Zenodo](https://zenodo.org/record/8205020)
+   - **Description:** MRI scans with expert labels, surgery details, and pathology data. Enables full-cycle training from diagnosis to simulation.
+
+4. **Endotect 2020 Challenge** `[Medical Imaging]`
+   - **Source:** [CodaLab](https://competitions.codalab.org/competitions/25266)
+   - **Description:** Contains labeled laparoscopic images, offering rich training material to improve AI object detection and surgical visuals segmentation.
+
+5. **Structured Endometriosis Dataset** `[Patient Records]`
+   - **Source:** [Zenodo](https://zenodo.org/record/8220727)
+   - **Description:** Well-organized records from over 10,000 patients covering symptoms, diagnoses, and health details. Essential for statistical simulations.
+
+6. **Endometriosis Diagnosis Statistics (ONS)** `[Patient Records]`
+   - **Source:** [ONS](https://www.ons.gov.uk)
+   - **Description:** Public demographic dataset including diagnosis details by age, ethnicity, and region for fair and inclusive modeling.
+
+7. **Gene Expression: Eutopic vs. Ectopic Tissues** `[Genomic Data]`
+   - **Source:** [Mendeley Data](https://data.mendeley.com/datasets/nb737txvr5/1)
+   - **Description:** ΔCT Gene Expression Dataset comparing healthy and diseased tissues to track gene behavior and support pattern recognition.
+
+8. **WESAD: Wearable Stress & Affect Dataset** `[Sensor Wearables]`
+   - **Source:** [University of Siegen](https://ubicomp.eti.uni-siegen.de/home/datasets)
+   - **Description:** Physiological signals (ECG, EDA, Respiration) for simulating real-time stress responses via live sensor feedback.
+
+9. **Weighted Gene Co-Expression Network Data (WGCNA)** `[Genomic Data]`
+   - **Source:** [PubMed](https://pubmed.ncbi.nlm.nih.gov/30369943)
+   - **Description:** Maps gene interactions linked to endometriosis, supporting molecular modeling inside the Twin.
+
+10. **Gut vs. Cervical Microbiota Profiling** `[Pathology Report]`
+    - **Source:** [Frontiers](https://www.frontiersin.org/articles/10.3389/fcimb.2021.788836/full)
+    - **Description:** Studies gut and cervical bacteria to help find non-invasive biomarkers using microbiome patterns.
+
+> 📁 **Access All Raw Datasets Here:** [Google Drive Repository](https://drive.google.com/drive/folders/15g4R9VRuKy12Zw5WDNRKpM0ZHEP6vFUp?usp=sharing)
+
+---
+
 ## 🚀 Getting Started for Teammates
 
 Follow these step-by-step instructions to set up the environment and run the project locally.

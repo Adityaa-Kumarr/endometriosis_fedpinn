@@ -16,13 +16,16 @@ class FeatureWeightingFFNN(nn.Module):
         self.path_encoder = nn.Sequential(nn.Linear(path_dim, hidden_dim), nn.ReLU(), nn.Dropout(0.2), nn.Linear(hidden_dim, hidden_dim // 2))
         self.sensor_encoder = nn.Sequential(nn.Linear(sensor_dim, hidden_dim), nn.ReLU(), nn.Dropout(0.2), nn.Linear(hidden_dim, hidden_dim // 2))
         
-        # Attention/Weighting mechanism across all 5 streams
-        input_dim_for_attention = (hidden_dim // 2) * 5
-        self.attention_weights = nn.Sequential(
-            nn.Linear(input_dim_for_attention, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, 5),  # 5 modalities: clinical, US, genomic, pathology, sensor
-            nn.Softmax(dim=1) 
+        # Multi-Head Self Attention mechanism across the 5 streams
+        self.embedding_dim = hidden_dim // 2
+        # Project each to a sequence of 5 tokens
+        self.mha = nn.MultiheadAttention(embed_dim=self.embedding_dim, num_heads=4, batch_first=True)
+        self.layer_norm = nn.LayerNorm(self.embedding_dim)
+        
+        # Final weight projector
+        self.weight_projector = nn.Sequential(
+            nn.Linear(self.embedding_dim * 5, 5),
+            nn.Softmax(dim=1)
         )
         
     def forward(self, clinical_data, us_data, genomic_data, path_data, sensor_data):
@@ -32,10 +35,17 @@ class FeatureWeightingFFNN(nn.Module):
         p_feat = self.path_encoder(path_data)
         s_feat = self.sensor_encoder(sensor_data)
         
-        combined_features = torch.cat([c_feat, u_feat, g_feat, p_feat, s_feat], dim=1)
+        # Stack into sequence for Transformer: [Batch, Sequence=5, Embedding]
+        seq = torch.stack([c_feat, u_feat, g_feat, p_feat, s_feat], dim=1)
         
-        # Compute dynamic weights for each modality
-        weights = self.attention_weights(combined_features)
+        # Apply Multi-Head Attention
+        attn_out, _ = self.mha(seq, seq, seq)
+        # Add & Norm
+        seq = self.layer_norm(seq + attn_out)
+        
+        # Flatten and project to attention weights
+        flat_seq = seq.view(seq.shape[0], -1)
+        weights = self.weight_projector(flat_seq)
         
         return c_feat, u_feat, g_feat, p_feat, s_feat, weights
 
