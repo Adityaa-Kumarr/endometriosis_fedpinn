@@ -18,8 +18,11 @@ def evaluate_model(model, dataloader):
             clinical = batch['clinical']
             us_data = batch['ultrasound']
             labels = batch['label'].numpy()
+            genomic = batch.get('genomic', torch.zeros((len(clinical), 256)))
+            pathology = batch.get('pathology', torch.zeros((len(clinical), 64)))
+            sensor = batch.get('sensor', torch.zeros((len(clinical), 32)))
             
-            prob, _, _ = model(clinical, us_data)
+            prob, _, _, _ = model(clinical, us_data, genomic, pathology, sensor)
             prob_np = prob.numpy()
             
             preds = (prob_np > 0.5).astype(int)

@@ -1023,8 +1023,12 @@ def main():
                 # 4. Mixed Precision Training Scaler
                 scaler = torch.cuda.amp.GradScaler() if torch.cuda.is_available() else None
                 
+                import time
+                total_start_time = time.time()
+                
                 model.train()
                 for epoch in range(epochs):
+                    epoch_start_time = time.time()
                     epoch_loss = 0.0
                     correct = 0
                     total = 0
@@ -1034,12 +1038,12 @@ def main():
                         # Mixed Precision Context
                         if torch.cuda.is_available():
                             with torch.cuda.amp.autocast():
-                                prob, stage_logits, _ = model(c_data, u_data, g_data, p_data, s_data)
+                                prob, stage_logits, _, _ = model(c_data, u_data, g_data, p_data, s_data)
                                 loss_p = bce_focal_loss(prob, target_pres)
                                 loss_s = ce_loss(stage_logits, target_stage)
                                 loss = loss_p + loss_s
                         else:
-                            prob, stage_logits, _ = model(c_data, u_data, g_data, p_data, s_data)
+                            prob, stage_logits, _, _ = model(c_data, u_data, g_data, p_data, s_data)
                             loss_p = bce_focal_loss(prob, target_pres)
                             loss_s = ce_loss(stage_logits, target_stage)
                             loss = loss_p + loss_s
@@ -1056,7 +1060,7 @@ def main():
                             for param in model.parameters():
                                 if param.grad is not None:
                                     noise = torch.normal(0, dp_epsilon, size=param.grad.shape).to(param.grad.device)
-                                    param.grad += noise
+                                    param.grad.add_(noise)
                                     
                             scaler.step(optimizer)
                             scaler.update()
@@ -1070,7 +1074,7 @@ def main():
                             for param in model.parameters():
                                 if param.grad is not None:
                                     noise = torch.normal(0, dp_epsilon, size=param.grad.shape).to(param.grad.device)
-                                    param.grad += noise
+                                    param.grad.add_(noise)
                                     
                             optimizer.step()
                             
@@ -1082,15 +1086,24 @@ def main():
                         correct += (preds == target_pres).sum().item()
                         total += len(target_pres)
                         
+                    epoch_end_time = time.time()
+                    time_per_epoch = epoch_end_time - epoch_start_time
+                    epochs_left = epochs - (epoch + 1)
+                    eta_seconds = time_per_epoch * epochs_left
+                    eta_str = time.strftime('%M:%S', time.gmtime(eta_seconds))
+                    progress_pct = int(((epoch + 1) / epochs) * 100)
+                        
                     progress_bar.progress((epoch + 1) / epochs)
                     
                     avg_loss = epoch_loss / len(loader)
                     acc_val = (correct / total) * 100.0 if total > 0 else 0
                     current_lr = scheduler.get_last_lr()[0]
                     
-                    status_text.text(f"Training Local Epoch {epoch+1}/{epochs} & Injecting DP-SGD Encrypted Noise...")
+                    status_text.text(f"Training Local Epoch {epoch+1}/{epochs} ({progress_pct}%) | ⏳ ETA: {eta_str} | 🔒 Injecting DP-SGD Noise...")
                     metrics_text.markdown(f"**Loss (Focal):** {avg_loss:.4f} | **Acc:** {acc_val:.2f}% | **Learning Rate:** {current_lr:.5f}")
                 
+                total_time = time.time() - total_start_time
+                st.success(f"✅ Federated Learning Iteration Complete in {time.strftime('%M:%S', time.gmtime(total_time))}. Global weights synced securely!")
                 model.eval()
                 # Save the new weights
                 torch.save({'full_model': model.state_dict()}, 'global_model.pth')
