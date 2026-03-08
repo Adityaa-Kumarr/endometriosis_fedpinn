@@ -164,7 +164,7 @@ class FullFedPINNModel(nn.Module):
         return prob, stage_logits, future_risk, gate_probs
 
 if __name__ == "__main__":
-    from ffnn_weighting import FeatureWeightingFFNN
+    from models.ffnn_weighting import FeatureWeightingFFNN
     
     ffnn = FeatureWeightingFFNN()
     pinn = EndometriosisPINN()

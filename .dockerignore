@@ -1,0 +1,23 @@
+# Reduce image size and avoid copying secrets/cache
+.git
+.gitignore
+*.pyc
+__pycache__
+.pytest_cache
+.mypy_cache
+*.egg-info
+.eggs
+venv
+.venv
+env
+.env
+*.pth
+*.pt
+*.h5
+.cursor
+*.md
+!README.md
+agent-transcripts
+terminals
+*.log
+dataset_manifest.json

@@ -1,3 +1,7 @@
+# Federated Digital Twin for Endometriosis — Kubernetes deployment
+# One server, one pod per FL client (each client = one dataset), one dashboard.
+# For AWS EC2: use with kubeadm/K3s or push image to ECR and use EKS.
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,10 +21,30 @@ spec:
       containers:
       - name: fedpinn-svr
         image: endo-fedpinn:latest
-        command: ["python", "federated/server.py", "3"]
+        imagePullPolicy: IfNotPresent
+        command: ["python", "federated/server.py", "5"]
         ports:
         - containerPort: 8080
-
+        env:
+        - name: NUM_ROUNDS
+          value: "5"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
@@ -33,33 +57,189 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
-
+  type: ClusterIP
 ---
+# Client 1 — one pod, dataset = client_1 (in image at /app/dataset/clients/client_1)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fedpinn-client
+  name: fedpinn-client-1
   labels:
     app: fedpinn-client
+    client-id: "1"
 spec:
-  replicas: 3 # Simulate 3 hospital nodes
+  replicas: 1
   selector:
     matchLabels:
       app: fedpinn-client
+      client-id: "1"
   template:
     metadata:
       labels:
         app: fedpinn-client
+        client-id: "1"
     spec:
       containers:
       - name: fedpinn-cli
         image: endo-fedpinn:latest
-        command: ["python", "federated/client.py", "1"] # All using client 1 data for simplicity in yaml
+        imagePullPolicy: IfNotPresent
+        command: ["python", "federated/client.py", "1"]
         env:
         - name: FLOWER_SERVER_URL
           value: "fedpinn-service:8080"
-
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
 ---
+# Client 2 — one pod, dataset = client_2
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fedpinn-client-2
+  labels:
+    app: fedpinn-client
+    client-id: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fedpinn-client
+      client-id: "2"
+  template:
+    metadata:
+      labels:
+        app: fedpinn-client
+        client-id: "2"
+    spec:
+      containers:
+      - name: fedpinn-cli
+        image: endo-fedpinn:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "federated/client.py", "2"]
+        env:
+        - name: FLOWER_SERVER_URL
+          value: "fedpinn-service:8080"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+---
+# Client 3 — one pod, dataset = client_3
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fedpinn-client-3
+  labels:
+    app: fedpinn-client
+    client-id: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fedpinn-client
+      client-id: "3"
+  template:
+    metadata:
+      labels:
+        app: fedpinn-client
+        client-id: "3"
+    spec:
+      containers:
+      - name: fedpinn-cli
+        image: endo-fedpinn:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "federated/client.py", "3"]
+        env:
+        - name: FLOWER_SERVER_URL
+          value: "fedpinn-service:8080"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+---
+# Client 4 — one pod, dataset = client_4
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fedpinn-client-4
+  labels:
+    app: fedpinn-client
+    client-id: "4"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fedpinn-client
+      client-id: "4"
+  template:
+    metadata:
+      labels:
+        app: fedpinn-client
+        client-id: "4"
+    spec:
+      containers:
+      - name: fedpinn-cli
+        image: endo-fedpinn:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "federated/client.py", "4"]
+        env:
+        - name: FLOWER_SERVER_URL
+          value: "fedpinn-service:8080"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+---
+# Client 5 — one pod, dataset = client_5
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fedpinn-client-5
+  labels:
+    app: fedpinn-client
+    client-id: "5"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fedpinn-client
+      client-id: "5"
+  template:
+    metadata:
+      labels:
+        app: fedpinn-client
+        client-id: "5"
+    spec:
+      containers:
+      - name: fedpinn-cli
+        image: endo-fedpinn:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "federated/client.py", "5"]
+        env:
+        - name: FLOWER_SERVER_URL
+          value: "fedpinn-service:8080"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+---
+# Streamlit dashboard (main UI)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -79,10 +259,29 @@ spec:
       containers:
       - name: dashboard
         image: endo-fedpinn:latest
-        command: ["streamlit", "run", "app.py", "--server.port=8501"]
+        imagePullPolicy: IfNotPresent
+        command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
         ports:
         - containerPort: 8501
-
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 15
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service

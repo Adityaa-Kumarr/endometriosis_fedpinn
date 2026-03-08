@@ -1,0 +1,1514 @@
+{
+  "root": "h:\\Akash\\DT\\Trnning dataset raw datset\\datasets",
+  "folders": {
+    "genomic data\\Dataset-1": {
+      "file_extensions": {
+        ".xlsx": 1
+      },
+      "total_files": 1,
+      "samples": {
+        ".xlsx": [
+          {
+            "path": "genomic data\\Dataset-1\\Data_Sheet_4_Weighted Gene Co-expression Network Analysis of Endometriosis and Identification of Functional Modules Associated With Its Main Hallmarks.xlsx",
+            "ext": ".xlsx",
+            "size_bytes": 1098132,
+            "inferred_type": "spreadsheet"
+          }
+        ]
+      }
+    },
+    "genomic data\\Dataset-2\\nb737txvr5-1": {
+      "file_extensions": {
+        ".docx": 1,
+        ".txt": 1,
+        ".xlsx": 1
+      },
+      "total_files": 3,
+      "samples": {
+        ".docx": [
+          {
+            "path": "genomic data\\Dataset-2\\nb737txvr5-1\\Data.docx",
+            "ext": ".docx",
+            "size_bytes": 19930,
+            "inferred_type": "other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "genomic data\\Dataset-2\\nb737txvr5-1\\Data.txt",
+            "ext": ".txt",
+            "size_bytes": 18961,
+            "first_line": "Gene symbol\tControl Group1\tControl Group2\tControl Group3\tTest Group 1(EUTOPIC)\tTest Group2(EUTOPIC)\tTest Group 3(EUTOPIC)\tTest Group 1(ECTOPIC)\tTest Group 2(ECTOPIC)\tTest Group 3(ECTOPIC)\t?CT Control ",
+            "inferred_type": "genomic_expression"
+          }
+        ],
+        ".xlsx": [
+          {
+            "path": "genomic data\\Dataset-2\\nb737txvr5-1\\Data.xlsx",
+            "ext": ".xlsx",
+            "size_bytes": 75986,
+            "inferred_type": "spreadsheet"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\test dataset": {
+      "file_extensions": {
+        ".pdf": 1
+      },
+      "total_files": 1,
+      "samples": {
+        ".pdf": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\icpr2020-endotect.pdf",
+            "ext": ".pdf",
+            "size_bytes": 6909214,
+            "inferred_type": "document"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\test dataset\\annotated_images": {
+      "file_extensions": {
+        ".jpg": 200
+      },
+      "total_files": 200,
+      "samples": {
+        ".jpg": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\annotated_images\\003ab8b5-cf6d-442a-849d-80ddf0d1edaf.jpg",
+            "ext": ".jpg",
+            "size_bytes": 100561,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\annotated_images\\003f46f1-e447-486a-aeb7-6bf8b45a2184.jpg",
+            "ext": ".jpg",
+            "size_bytes": 141685,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\annotated_images\\00be7d4a-d643-4075-9ea3-e5bff2cd9a5c.jpg",
+            "ext": ".jpg",
+            "size_bytes": 94342,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\annotated_images\\00c7089c-caf9-4c1b-850f-bedbb11668fc.jpg",
+            "ext": ".jpg",
+            "size_bytes": 140401,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\annotated_images\\01deb8d0-4bc5-4092-9a76-9f5c2f74f0df.jpg",
+            "ext": ".jpg",
+            "size_bytes": 96567,
+            "inferred_type": "image_pil"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\test dataset\\bbox": {
+      "file_extensions": {
+        ".csv": 210
+      },
+      "total_files": 210,
+      "samples": {
+        ".csv": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\bbox\\003ab8b5-cf6d-442a-849d-80ddf0d1edaf.csv",
+            "ext": ".csv",
+            "size_bytes": 53,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,446,281,623,508"
+            ],
+            "inferred_type": "bbox_detection"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\bbox\\003f46f1-e447-486a-aeb7-6bf8b45a2184.csv",
+            "ext": ".csv",
+            "size_bytes": 53,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,123,130,526,554"
+            ],
+            "inferred_type": "bbox_detection"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\bbox\\00be7d4a-d643-4075-9ea3-e5bff2cd9a5c.csv",
+            "ext": ".csv",
+            "size_bytes": 53,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,237,114,585,463"
+            ],
+            "inferred_type": "bbox_detection"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\bbox\\00c7089c-caf9-4c1b-850f-bedbb11668fc.csv",
+            "ext": ".csv",
+            "size_bytes": 53,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,181,207,424,396"
+            ],
+            "inferred_type": "bbox_detection"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\bbox\\01deb8d0-4bc5-4092-9a76-9f5c2f74f0df.csv",
+            "ext": ".csv",
+            "size_bytes": 53,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,123,226,341,539"
+            ],
+            "inferred_type": "bbox_detection"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\test dataset\\images": {
+      "file_extensions": {
+        ".jpg": 200
+      },
+      "total_files": 200,
+      "samples": {
+        ".jpg": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\images\\003ab8b5-cf6d-442a-849d-80ddf0d1edaf.jpg",
+            "ext": ".jpg",
+            "size_bytes": 105062,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\images\\003f46f1-e447-486a-aeb7-6bf8b45a2184.jpg",
+            "ext": ".jpg",
+            "size_bytes": 151789,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\images\\00be7d4a-d643-4075-9ea3-e5bff2cd9a5c.jpg",
+            "ext": ".jpg",
+            "size_bytes": 95191,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\images\\00c7089c-caf9-4c1b-850f-bedbb11668fc.jpg",
+            "ext": ".jpg",
+            "size_bytes": 147696,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\images\\01deb8d0-4bc5-4092-9a76-9f5c2f74f0df.jpg",
+            "ext": ".jpg",
+            "size_bytes": 101279,
+            "inferred_type": "image_pil"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\test dataset\\masks": {
+      "file_extensions": {
+        ".jpg": 200
+      },
+      "total_files": 200,
+      "samples": {
+        ".jpg": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\masks\\003ab8b5-cf6d-442a-849d-80ddf0d1edaf.jpg",
+            "ext": ".jpg",
+            "size_bytes": 10266,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\masks\\003f46f1-e447-486a-aeb7-6bf8b45a2184.jpg",
+            "ext": ".jpg",
+            "size_bytes": 15681,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\masks\\00be7d4a-d643-4075-9ea3-e5bff2cd9a5c.jpg",
+            "ext": ".jpg",
+            "size_bytes": 13927,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\masks\\00c7089c-caf9-4c1b-850f-bedbb11668fc.jpg",
+            "ext": ".jpg",
+            "size_bytes": 10710,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\test dataset\\masks\\01deb8d0-4bc5-4092-9a76-9f5c2f74f0df.jpg",
+            "ext": ".jpg",
+            "size_bytes": 11923,
+            "inferred_type": "image_pil"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)": {
+      "file_extensions": {
+        ".pdf": 1
+      },
+      "total_files": 1,
+      "samples": {
+        ".pdf": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\1911.07069.pdf",
+            "ext": ".pdf",
+            "size_bytes": 4276299,
+            "inferred_type": "document"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\annotated_images": {
+      "file_extensions": {
+        ".jpg": 1002
+      },
+      "total_files": 1002,
+      "samples": {
+        ".jpg": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\annotated_images\\cju0qkwl35piu0993l0dewei2.jpg",
+            "ext": ".jpg",
+            "size_bytes": 101474,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\annotated_images\\cju0qoxqj9q6s0835b43399p4.jpg",
+            "ext": ".jpg",
+            "size_bytes": 235767,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\annotated_images\\cju0qx73cjw570799j4n5cjze.jpg",
+            "ext": ".jpg",
+            "size_bytes": 96252,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\annotated_images\\cju0roawvklrq0799vmjorwfv.jpg",
+            "ext": ".jpg",
+            "size_bytes": 62516,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\annotated_images\\cju0rx1idathl0835detmsp84.jpg",
+            "ext": ".jpg",
+            "size_bytes": 55889,
+            "inferred_type": "image_pil"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\bbox": {
+      "file_extensions": {
+        ".csv": 1000
+      },
+      "total_files": 1000,
+      "samples": {
+        ".csv": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\bbox\\cju0qkwl35piu0993l0dewei2.csv",
+            "ext": ".csv",
+            "size_bytes": 50,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,38,5,430,338"
+            ],
+            "inferred_type": "bbox_detection"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\bbox\\cju0qoxqj9q6s0835b43399p4.csv",
+            "ext": ".csv",
+            "size_bytes": 54,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,194,284,913,1049"
+            ],
+            "inferred_type": "bbox_detection"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\bbox\\cju0qx73cjw570799j4n5cjze.csv",
+            "ext": ".csv",
+            "size_bytes": 52,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,187,14,543,526"
+            ],
+            "inferred_type": "bbox_detection"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\bbox\\cju0roawvklrq0799vmjorwfv.csv",
+            "ext": ".csv",
+            "size_bytes": 95,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,486,42,622,339",
+              "polyp,329,71,437,150",
+              "polyp,619,151,622,285"
+            ],
+            "inferred_type": "bbox_detection"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\bbox\\cju0rx1idathl0835detmsp84.csv",
+            "ext": ".csv",
+            "size_bytes": 53,
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,292,154,481,375"
+            ],
+            "inferred_type": "bbox_detection"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\images": {
+      "file_extensions": {
+        ".jpg": 1000
+      },
+      "total_files": 1000,
+      "samples": {
+        ".jpg": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\images\\cju0qkwl35piu0993l0dewei2.jpg",
+            "ext": ".jpg",
+            "size_bytes": 96505,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\images\\cju0qoxqj9q6s0835b43399p4.jpg",
+            "ext": ".jpg",
+            "size_bytes": 220087,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\images\\cju0qx73cjw570799j4n5cjze.jpg",
+            "ext": ".jpg",
+            "size_bytes": 88573,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\images\\cju0roawvklrq0799vmjorwfv.jpg",
+            "ext": ".jpg",
+            "size_bytes": 56073,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\images\\cju0rx1idathl0835detmsp84.jpg",
+            "ext": ".jpg",
+            "size_bytes": 50444,
+            "inferred_type": "image_pil"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\masks": {
+      "file_extensions": {
+        ".jpg": 1000
+      },
+      "total_files": 1000,
+      "samples": {
+        ".jpg": [
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\masks\\cju0qkwl35piu0993l0dewei2.jpg",
+            "ext": ".jpg",
+            "size_bytes": 12927,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\masks\\cju0qoxqj9q6s0835b43399p4.jpg",
+            "ext": ".jpg",
+            "size_bytes": 35616,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\masks\\cju0qx73cjw570799j4n5cjze.jpg",
+            "ext": ".jpg",
+            "size_bytes": 16078,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\masks\\cju0roawvklrq0799vmjorwfv.jpg",
+            "ext": ".jpg",
+            "size_bytes": 11463,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\masks\\cju0rx1idathl0835detmsp84.jpg",
+            "ext": ".jpg",
+            "size_bytes": 9980,
+            "inferred_type": "image_pil"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-4\\Glenda_v1.5_classes": {
+      "file_extensions": {
+        ".json": 2,
+        ".txt": 2,
+        ".html": 1,
+        ".csv": 1
+      },
+      "total_files": 6,
+      "samples": {
+        ".json": [
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\coco.json",
+            "ext": ".json",
+            "size_bytes": 943933,
+            "inferred_type": "json_other"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\config.json",
+            "ext": ".json",
+            "size_bytes": 219,
+            "inferred_type": "json_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\colors.txt",
+            "ext": ".txt",
+            "size_bytes": 55,
+            "first_line": "0 0 0",
+            "inferred_type": "text"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\labels.txt",
+            "ext": ".txt",
+            "size_bytes": 95,
+            "first_line": "background",
+            "inferred_type": "text"
+          }
+        ],
+        ".html": [
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\label_colors.html",
+            "ext": ".html",
+            "size_bytes": 1156,
+            "inferred_type": "other"
+          }
+        ],
+        ".csv": [
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\statistics_overall.csv",
+            "ext": ".csv",
+            "size_bytes": 145,
+            "header": "class,images,annots",
+            "row_sample": [
+              "6.1.1.4_Endo-Uterus,16,26",
+              "6.1.1.1_Endo-Peritoneum,253,489",
+              "6.1.1.2_Endo-Ovar,53,54"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\annots": {
+      "file_extensions": {
+        ".png": 373
+      },
+      "total_files": 373,
+      "samples": {
+        ".png": [
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\annots\\c_100_v_(video_3062.mp4)_f_1458.png",
+            "ext": ".png",
+            "size_bytes": 2430,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\annots\\c_102_v_(video_3119.mp4)_f_1311.png",
+            "ext": ".png",
+            "size_bytes": 10494,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\annots\\c_102_v_(video_3119.mp4)_f_185.png",
+            "ext": ".png",
+            "size_bytes": 7172,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\annots\\c_102_v_(video_3124.mp4)_f_97.png",
+            "ext": ".png",
+            "size_bytes": 5255,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\annots\\c_102_v_(video_3130.mp4)_f_0.png",
+            "ext": ".png",
+            "size_bytes": 7563,
+            "inferred_type": "image_pil"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\frames": {
+      "file_extensions": {
+        ".jpg": 373
+      },
+      "total_files": 373,
+      "samples": {
+        ".jpg": [
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\frames\\c_100_v_(video_3062.mp4)_f_1458.jpg",
+            "ext": ".jpg",
+            "size_bytes": 38818,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\frames\\c_102_v_(video_3119.mp4)_f_1311.jpg",
+            "ext": ".jpg",
+            "size_bytes": 52193,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\frames\\c_102_v_(video_3119.mp4)_f_185.jpg",
+            "ext": ".jpg",
+            "size_bytes": 39013,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\frames\\c_102_v_(video_3124.mp4)_f_97.jpg",
+            "ext": ".jpg",
+            "size_bytes": 71049,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\frames\\c_102_v_(video_3130.mp4)_f_0.jpg",
+            "ext": ".jpg",
+            "size_bytes": 65172,
+            "inferred_type": "image_pil"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\split_vis": {
+      "file_extensions": {
+        ".html": 1
+      },
+      "total_files": 1,
+      "samples": {
+        ".html": [
+          {
+            "path": "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\split_vis\\coco.html",
+            "ext": ".html",
+            "size_bytes": 175605,
+            "inferred_type": "other"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-5\\Uterus.v3i.coco": {
+      "file_extensions": {
+        ".txt": 2
+      },
+      "total_files": 2,
+      "samples": {
+        ".txt": [
+          {
+            "path": "medical imaging\\Dataset-5\\Uterus.v3i.coco\\README.dataset.txt",
+            "ext": ".txt",
+            "size_bytes": 135,
+            "first_line": "# Uterus > 2022-03-13 8:00pm",
+            "inferred_type": "text"
+          },
+          {
+            "path": "medical imaging\\Dataset-5\\Uterus.v3i.coco\\README.roboflow.txt",
+            "ext": ".txt",
+            "size_bytes": 1217,
+            "first_line": "",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "medical imaging\\Dataset-5\\Uterus.v3i.coco\\train": {
+      "file_extensions": {
+        ".jpg": 24,
+        ".json": 1
+      },
+      "total_files": 25,
+      "samples": {
+        ".jpg": [
+          {
+            "path": "medical imaging\\Dataset-5\\Uterus.v3i.coco\\train\\f_0_a_jpg.rf.3a467e5d1952cb66ddd7e33a16425388.jpg",
+            "ext": ".jpg",
+            "size_bytes": 18926,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-5\\Uterus.v3i.coco\\train\\f_0_a_jpg.rf.a7b01d903587fc778f4338e092c57133.jpg",
+            "ext": ".jpg",
+            "size_bytes": 18413,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-5\\Uterus.v3i.coco\\train\\f_0_a_jpg.rf.e6a75aeaf5831cc7efb5065f3b132f31.jpg",
+            "ext": ".jpg",
+            "size_bytes": 18416,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-5\\Uterus.v3i.coco\\train\\f_1233_a_jpg.rf.06afd48cf66b540c6cd9c258876ac7f5.jpg",
+            "ext": ".jpg",
+            "size_bytes": 25479,
+            "inferred_type": "image_pil"
+          },
+          {
+            "path": "medical imaging\\Dataset-5\\Uterus.v3i.coco\\train\\f_1233_a_jpg.rf.0cceaa08a00fe1a2300e9bbfddec8a25.jpg",
+            "ext": ".jpg",
+            "size_bytes": 26207,
+            "inferred_type": "image_pil"
+          }
+        ],
+        ".json": [
+          {
+            "path": "medical imaging\\Dataset-5\\Uterus.v3i.coco\\train\\_annotations.coco.json",
+            "ext": ".json",
+            "size_bytes": 6729,
+            "inferred_type": "json_other"
+          }
+        ]
+      }
+    },
+    "pathology reports\\Dataset-6": {
+      "file_extensions": {
+        ".xlsx": 1
+      },
+      "total_files": 1,
+      "samples": {
+        ".xlsx": [
+          {
+            "path": "pathology reports\\Dataset-6\\Table_1_Gut Microbiota Exceeds Cervical Microbiota for Early Diagnosis of Endometriosis.xlsx",
+            "ext": ".xlsx",
+            "size_bytes": 70769,
+            "inferred_type": "spreadsheet"
+          }
+        ]
+      }
+    },
+    "patient Records\\Dataset-7": {
+      "file_extensions": {
+        ".csv": 1
+      },
+      "total_files": 1,
+      "samples": {
+        ".csv": [
+          {
+            "path": "patient Records\\Dataset-7\\Psychological Wellbeing and Endometriosis and Adenomyosis.csv",
+            "ext": ".csv",
+            "size_bytes": 14980,
+            "header": "\ufeffAge,Location,Disease_Category,Disease Dichotomous,Age_Onset,Onset_Seeking,Seeking_Diagnosis,Diagnostic_Experience,Q15_1,Q15_2,Q15_3,Q15_4,Q17_1,Q17_2,Q17_3,Q18,Q19_NPS_GROUP,Q19,Q20_1,Q20_2,Q20_3,Q20",
+            "row_sample": [
+              ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",
+              "32,Town,1,1,12,1,8,1,1,1,1,1,1,1,1,10,3,10,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,9,9,9",
+              "25,United States,1,1,10,6,9,2,8,3,5,4,8,2,5,3,1,3,8,9,6,8,8,9,7,8,9,6,7,5,9,6,4,2,3,2,3,2,1,3,2,3,3,4,3,1,2,3,1,1,4,3,2,18,16,16"
+            ],
+            "inferred_type": "clinical_survey"
+          }
+        ]
+      }
+    },
+    "patient Records\\Dataset-8": {
+      "file_extensions": {
+        ".xlsx": 1
+      },
+      "total_files": 1,
+      "samples": {
+        ".xlsx": [
+          {
+            "path": "patient Records\\Dataset-8\\Characteristics of women with an endometriosis diagnosis.xlsx",
+            "ext": ".xlsx",
+            "size_bytes": 292780,
+            "inferred_type": "spreadsheet"
+          }
+        ]
+      }
+    },
+    "patient Records\\Dataset-9": {
+      "file_extensions": {
+        ".csv": 1
+      },
+      "total_files": 1,
+      "samples": {
+        ".csv": [
+          {
+            "path": "patient Records\\Dataset-9\\structured_endometriosis_data.csv",
+            "ext": ".csv",
+            "size_bytes": 473029,
+            "header": "Age,Menstrual_Irregularity,Chronic_Pain_Level,Hormone_Level_Abnormality,Infertility,BMI,Diagnosis",
+            "row_sample": [
+              "24,1,8.36153142677638,0,0,19.451313623072927,0",
+              "37,1,4.9955075964857585,0,0,22.388435692677106,0",
+              "46,1,3.3639956305165075,1,0,21.32044316672262,0"
+            ],
+            "inferred_type": "clinical_survey"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD": {
+      "file_extensions": {
+        ".pdf": 1
+      },
+      "total_files": 1,
+      "samples": {
+        ".pdf": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\wesad_readme.pdf",
+            "ext": ".pdf",
+            "size_bytes": 242559,
+            "inferred_type": "document"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S10": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S10\\S10_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1076,
+            "header": "# Subj;S10;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;Fun;Medi 1;TSST;Medi 2;bRead;fRead;sRead;;;;;;;;;;;;;;;;;;",
+              "# START;2.5;27.53;38.42;54.3;83.17;23.39;34.58;71.22;;;;;;;;;;;;;;;;;;",
+              "# END;22.5;34.25;45.4;66.55;90.15;24.5;36.15;72.27;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S10\\S10_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 374,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S11": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S11\\S11_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1077,
+            "header": "# Subj;S11;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;TSST;Medi 1;Fun;Medi 2;bRead;sRead;fRead;;;;;;;;;;;;;;;;;;",
+              "# START;2.23;32.45;60.3;69.27;79.09;22.55;48;76.28;;;;;;;;;;;;;;;;;;",
+              "# END;22.23;44.25;67.25;75.55;86.05;24.05;49.12;77.38;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S11\\S11_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 377,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S13": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S13\\S13_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1076,
+            "header": "# Subj;S13;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;Fun;Medi 1;TSST;Medi 2;bRead;fRead;sRead;;;;;;;;;;;;;;;;;;",
+              "# START;2.28;28.44;40.07;55.21;83.28;22.53;36.2;71.3;;;;;;;;;;;;;;;;;;",
+              "# END;22.28;35.26;47.05;66.45;90.25;24.02;37;72.38;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S13\\S13_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 374,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S14": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S14\\S14_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1074,
+            "header": "# Subj;S14;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;TSST;Medi 2;Fun;Medi 1;bRead;sRead;fRead;;;;;;;;;;;;;;;;;;",
+              "# START;2;33.18;62.22;73.24;84.29;22.14;49.47;80.36;;;;;;;;;;;;;;;;;;",
+              "# END;22;44.53;69.19;79.56;91.26;23.37;51.02;81.5;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S14\\S14_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 374,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S15": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S15\\S15_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1072,
+            "header": "# Subj;S15;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;Fun;Medi 1;TSST;Medi 2;bRead;fRead;sRead;;;;;;;;;;;;;;;;;;",
+              "# START;4.25;29.26;40.11;54.14;80.38;24.5;36.27;68.43;;;;;;;;;;;;;;;;;;",
+              "# END;24.2;35.58;47.08;66;87.35;26;37.33;69.5;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S15\\S15_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 450,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S16": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S16\\S16_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1071,
+            "header": "# Subj;S16;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;TSST;Medi 1;Fun;Medi 2;bRead;sRead;fRead;;;;;;;;;;;;;;;;;;",
+              "# START;3;34.3;63.15;73.22;84.56;23.28;50.36;80.3;;;;;;;;;;;;;;;;;;",
+              "# END;23;46.03;70.1;79.5;91.53;24.43;51.53;81.43;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S16\\S16_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 453,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S17": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S17\\S17_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1079,
+            "header": "# Subj;S17;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;Fun;Medi 1;TSST;Medi 2;bRead;fRead;sRead;;;;;;;;;;;;;;;;;;",
+              "# START;3.02;30.3;43.53;60.02;89.09;23.37;38.02;77.02;;;;;;;;;;;;;;;;;;",
+              "# END;23.03;37.02;49.5;72.25;96.03;24.55;39.19;78.21;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S17\\S17_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 483,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S2\\S2": {
+      "file_extensions": {
+        ".pkl": 1,
+        ".csv": 1,
+        ".txt": 2
+      },
+      "total_files": 4,
+      "samples": {
+        ".pkl": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2.pkl",
+            "ext": ".pkl",
+            "size_bytes": 975117737,
+            "inferred_type": "pickle_sensor_or_model"
+          }
+        ],
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1064,
+            "header": "# Subj;S2;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;TSST;Medi 1;Fun;Medi 2;sRead;fRead;;;;;;;;;;;;;;;;;;;",
+              "# START;7.08;39.55;70.19;81.25;93.38;54.42;89.51;;;;;;;;;;;;;;;;;;;",
+              "# END;26.32;50.3;77.1;87.47;100.15;56.07;91.15;;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 481,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_respiban.txt",
+            "ext": ".txt",
+            "size_bytes": 261272944,
+            "first_line": "# OpenSignals Text File Format",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_E4_Data": {
+      "file_extensions": {
+        ".csv": 7,
+        ".txt": 1
+      },
+      "total_files": 8,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_E4_Data\\ACC.csv",
+            "ext": ".csv",
+            "size_bytes": 2329669,
+            "header": "1495437325.000000, 1495437325.000000, 1495437325.000000",
+            "row_sample": [
+              "32.000000, 32.000000, 32.000000",
+              "29,-6,55",
+              "28,-6,55"
+            ],
+            "inferred_type": "tabular_other"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_E4_Data\\BVP.csv",
+            "ext": ".csv",
+            "size_bytes": 3166493,
+            "header": "1495437325.00",
+            "row_sample": [
+              "64.000000",
+              "-0.00",
+              "-0.00"
+            ],
+            "inferred_type": "tabular_other"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_E4_Data\\EDA.csv",
+            "ext": ".csv",
+            "size_bytes": 283473,
+            "header": "1495437325.000000",
+            "row_sample": [
+              "4.000000",
+              "0.000000",
+              "0.328021"
+            ],
+            "inferred_type": "tabular_other"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_E4_Data\\HR.csv",
+            "ext": ".csv",
+            "size_bytes": 47501,
+            "header": "1495437335.000000",
+            "row_sample": [
+              "1.000000",
+              "101.00",
+              "106.50"
+            ],
+            "inferred_type": "tabular_other"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_E4_Data\\IBI.csv",
+            "ext": ".csv",
+            "size_bytes": 72018,
+            "header": "1495437325.000000, IBI",
+            "row_sample": [
+              "14.313155,0.765660",
+              "15.203821,0.890666",
+              "15.985107,0.781286"
+            ],
+            "inferred_type": "sensor_timeseries"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_E4_Data\\info.txt",
+            "ext": ".txt",
+            "size_bytes": 1544,
+            "first_line": ".csv files in this archive are in the following format:",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S3": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 2
+      },
+      "total_files": 3,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S3\\S3_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1077,
+            "header": "# Subj:;S3;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;TSST;Medi 1;Fun;Medi 2;bRead;sRead;fRead;;;;;;;;;;;;;;;;;;",
+              "# START;6.44;38.15;72.28;84.15;97.49;26.27;54.04;93.15;;;;;;;;;;;;;;;;;;",
+              "# END;26.04;49.15;79.3;90.5;104.27;28;55.31;94.42;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S3\\S3_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 603,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S3\\S3_respiban.txt",
+            "ext": ".txt",
+            "size_bytes": 277487584,
+            "first_line": "# OpenSignals Text File Format",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S3\\S3_E4_Data": {
+      "file_extensions": {
+        ".csv": 7,
+        ".txt": 1
+      },
+      "total_files": 8,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S3\\S3_E4_Data\\ACC.csv",
+            "ext": ".csv",
+            "size_bytes": 2476537,
+            "header": "1495624128.000000, 1495624128.000000, 1495624128.000000",
+            "row_sample": [
+              "32.000000, 32.000000, 32.000000",
+              "-27,4,57",
+              "-26,4,58"
+            ],
+            "inferred_type": "tabular_other"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S3\\S3_E4_Data\\BVP.csv",
+            "ext": ".csv",
+            "size_bytes": 2906843,
+            "header": "1495624128.00",
+            "row_sample": [
+              "64.000000",
+              "-0.00",
+              "-0.00"
+            ],
+            "inferred_type": "tabular_other"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S3\\S3_E4_Data\\EDA.csv",
+            "ext": ".csv",
+            "size_bytes": 278073,
+            "header": "1495624128.000000",
+            "row_sample": [
+              "4.000000",
+              "0.000000",
+              "0.831534"
+            ],
+            "inferred_type": "tabular_other"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S3\\S3_E4_Data\\HR.csv",
+            "ext": ".csv",
+            "size_bytes": 46801,
+            "header": "1495624138.000000",
+            "row_sample": [
+              "1.000000",
+              "124.00",
+              "88.50"
+            ],
+            "inferred_type": "tabular_other"
+          },
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S3\\S3_E4_Data\\IBI.csv",
+            "ext": ".csv",
+            "size_bytes": 39849,
+            "header": "1495624128.000000, IBI",
+            "row_sample": [
+              "10.672364,0.953169",
+              "19.454015,0.984420",
+              "20.500938,1.046923"
+            ],
+            "inferred_type": "sensor_timeseries"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S3\\S3_E4_Data\\info.txt",
+            "ext": ".txt",
+            "size_bytes": 1544,
+            "first_line": ".csv files in this archive are in the following format:",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S4": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S4\\S4_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1073,
+            "header": "# Subj:;S4;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;Fun;Medi 1;TSST;Medi 2;bRead;fRead;sRead;;;;;;;;;;;;;;;;;;",
+              "# START;5.52;31.39;45.52;61.2;95.43;25.55;41.55;76;;;;;;;;;;;;;;;;;;",
+              "# END;25.3;38.11;53;72.15;102.4;27.06;43.07;77.04;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S4\\S4_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 374,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S5": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S5\\S5_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1075,
+            "header": "# Subj;S5;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;Fun;Medi 1;TSST;Medi 2;bRead;fRead;sRead;;;;;;;;;;;;;;;;;;",
+              "# START;5.37;32;45.43;61;92.15;26.15;41.15;75.28;;;;;;;;;;;;;;;;;;",
+              "# END;25.55;38.34;52.4;72.05;99.12;27.47;42.45;76.32;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S5\\S5_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 435,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S6": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S6\\S6_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1081,
+            "header": "# Subj;S6;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;TSST;Medi 1;Fun;Medi 2;bRead;sRead;fRead;;;;;;;;;;;;;;;;;;",
+              "# START;11.17;41.15;75.54;93.05;109;31.35;56.12;104.36;;;;;;;;;;;;;;;;;;",
+              "# END;31.17;52.25;82.51;99.37;115.5;32.53;57.22;106.05;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S6\\S6_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 597,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S7": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S7\\S7_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1073,
+            "header": "# Subj;S7;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;Fun;Medi 1;TSST;Medi 2;bRead;fRead;sRead;;;;;;;;;;;;;;;;;;",
+              "# START;2.14;26.24;37.21;52.1;78.07;22.36;33.3;66.37;;;;;;;;;;;;;;;;;;",
+              "# END;22.2;32.56;44.18;63.1;85;23.46;34.43;67.41;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S7\\S7_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 375,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S8": {
+      "file_extensions": {
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 2,
+      "samples": {
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S8\\S8_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1070,
+            "header": "# Subj;S8;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;Fun;Medi 1;TSST;Medi 2;bRead;fRead;sRead;;;;;;;;;;;;;;;;;;",
+              "# START;3.56;29;39.52;56.1;82.54;24.16;36.03;70.49;;;;;;;;;;;;;;;;;;",
+              "# END;23.45;35.3;46.52;67.4;89.5;25.25;37.15;72;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S8\\S8_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 521,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    },
+    "sensor data\\Dataset-10\\WESAD\\S9": {
+      "file_extensions": {
+        ".pkl": 1,
+        ".zip": 1,
+        ".csv": 1,
+        ".txt": 1
+      },
+      "total_files": 4,
+      "samples": {
+        ".pkl": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S9\\S9.pkl",
+            "ext": ".pkl",
+            "size_bytes": 832647582,
+            "inferred_type": "pickle_sensor_or_model"
+          }
+        ],
+        ".zip": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S9\\S9_E4_Data.zip",
+            "ext": ".zip",
+            "size_bytes": 1385620,
+            "inferred_type": "other"
+          }
+        ],
+        ".csv": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S9\\S9_quest.csv",
+            "ext": ".csv",
+            "size_bytes": 1073,
+            "header": "# Subj;S9;;;;;;;;;;;;;;;;;;;;;;;;;",
+            "row_sample": [
+              "# ORDER;Base;TSST;Medi 1;Fun;Medi 2;bRead;sRead;fRead;;;;;;;;;;;;;;;;;;",
+              "# START;1.48;31.45;59.02;68.11;78.45;22.16;46.49;75.3;;;;;;;;;;;;;;;;;;",
+              "# END;21.48;42.5;66;74.43;85.4;23.36;48.11;76.5;;;;;;;;;;;;;;;;;;"
+            ],
+            "inferred_type": "tabular_other"
+          }
+        ],
+        ".txt": [
+          {
+            "path": "sensor data\\Dataset-10\\WESAD\\S9\\S9_readme.txt",
+            "ext": ".txt",
+            "size_bytes": 375,
+            "first_line": "### Personal information ###",
+            "inferred_type": "text"
+          }
+        ]
+      }
+    }
+  },
+  "modality_summary": {
+    "genomic": [
+      "genomic data\\Dataset-1",
+      "genomic data\\Dataset-2\\nb737txvr5-1"
+    ],
+    "medical_imaging": [
+      "medical imaging\\Dataset-3\\EndoTect\\test dataset",
+      "medical imaging\\Dataset-3\\EndoTect\\test dataset\\annotated_images",
+      "medical imaging\\Dataset-3\\EndoTect\\test dataset\\bbox",
+      "medical imaging\\Dataset-3\\EndoTect\\test dataset\\images",
+      "medical imaging\\Dataset-3\\EndoTect\\test dataset\\masks",
+      "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)",
+      "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\annotated_images",
+      "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\bbox",
+      "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\images",
+      "medical imaging\\Dataset-3\\EndoTect\\Training dataset (Kvasir-SEG)\\masks",
+      "medical imaging\\Dataset-4\\Glenda_v1.5_classes",
+      "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\annots",
+      "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\frames",
+      "medical imaging\\Dataset-4\\Glenda_v1.5_classes\\split_vis",
+      "medical imaging\\Dataset-5\\Uterus.v3i.coco",
+      "medical imaging\\Dataset-5\\Uterus.v3i.coco\\train"
+    ],
+    "pathology": [
+      "pathology reports\\Dataset-6"
+    ],
+    "patient_records": [
+      "patient Records\\Dataset-7",
+      "patient Records\\Dataset-8",
+      "patient Records\\Dataset-9"
+    ],
+    "sensor": [
+      "sensor data\\Dataset-10\\WESAD",
+      "sensor data\\Dataset-10\\WESAD\\S10",
+      "sensor data\\Dataset-10\\WESAD\\S11",
+      "sensor data\\Dataset-10\\WESAD\\S13",
+      "sensor data\\Dataset-10\\WESAD\\S14",
+      "sensor data\\Dataset-10\\WESAD\\S15",
+      "sensor data\\Dataset-10\\WESAD\\S16",
+      "sensor data\\Dataset-10\\WESAD\\S17",
+      "sensor data\\Dataset-10\\WESAD\\S2\\S2",
+      "sensor data\\Dataset-10\\WESAD\\S2\\S2\\S2_E4_Data",
+      "sensor data\\Dataset-10\\WESAD\\S3",
+      "sensor data\\Dataset-10\\WESAD\\S3\\S3_E4_Data",
+      "sensor data\\Dataset-10\\WESAD\\S4",
+      "sensor data\\Dataset-10\\WESAD\\S5",
+      "sensor data\\Dataset-10\\WESAD\\S6",
+      "sensor data\\Dataset-10\\WESAD\\S7",
+      "sensor data\\Dataset-10\\WESAD\\S8",
+      "sensor data\\Dataset-10\\WESAD\\S9"
+    ]
+  },
+  "training_system_notes": [
+    "FedPINN expects: clinical.csv (age,bmi,pain,...) + us_embeddings.npy (128-d). Other modalities optional: genomic_data.npy (256), pathology_data.npy (64), sensor_data.npy (32).",
+    "clinical_survey CSVs can be normalized with data_loader.normalize_clinical_dataframe; map columns to CLINICAL_FEATURE_COLUMNS.",
+    "bbox_detection / coco_annotations: use for detection/segmentation training; images -> run image encoder -> us_embeddings.npy.",
+    "sensor_timeseries / pickle_sensor: convert to 32-d per sample for sensor_data.npy or use as auxiliary stream.",
+    "genomic_expression (e.g. Gene symbol, groups): convert to 256-d embeddings for genomic_data.npy."
+  ]
+}

@@ -380,6 +380,8 @@ class UterusDigitalTwin:
                 
                 adhesion_lines.append((pt1, pt2))
                 
+        # future_lesions: optional sizes (same length as coords) for consistency
+        f_sizes = [8.0] * len(f_lesion_x) if f_lesion_x else []
         return {
             'uterus': (x_uterus, y_uterus, z_uterus),
             'left_ovary': left_ovary,
@@ -387,7 +389,9 @@ class UterusDigitalTwin:
             'left_tube': left_tube,
             'right_tube': right_tube,
             'lesions': (lesion_x, lesion_y, lesion_z, lesion_colors),
+            'lesion_sizes': lesion_sizes,
             'future_lesions': (f_lesion_x, f_lesion_y, f_lesion_z, f_lesion_colors),
+            'future_lesion_sizes': f_sizes,
             'adhesions': adhesion_lines
         }
 

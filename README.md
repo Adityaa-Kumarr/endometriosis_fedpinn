@@ -165,7 +165,13 @@ python federated/client.py 1
 
 If you are working on DevOps or want to package the application, you can containerize it natively.
 
-**1. Build the Docker Image:**
+**Automatic deploy on AWS (ECR + EKS + apply):**
+```bash
+./deployment/scripts/deploy-aws.sh
+```
+See `deployment/scripts/README.md` for prerequisites (AWS CLI, Docker, kubectl, eksctl) and options.
+
+**1. Build the Docker Image (manual):**
 ```bash
 docker build -t endo-fedpinn:latest -f deployment/Dockerfile .
 ```
@@ -173,6 +179,7 @@ docker build -t endo-fedpinn:latest -f deployment/Dockerfile .
 **2. Deploy via Kubernetes:**
 ```bash
 kubectl apply -f deployment/k8s_deployment.yaml
+kubectl apply -f deployment/k8s_pdb.yaml
 ```
 
 ---

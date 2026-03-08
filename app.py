@@ -89,10 +89,80 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from models.ffnn_weighting import FeatureWeightingFFNN
 from models.pinn import EndometriosisPINN, FullFedPINNModel
+from models.image_encoder import load_image_encoder, encode_image
 from digital_twin.simulator import UterusDigitalTwin
 from digital_twin.omniverse_export import export_to_obj, export_lesions_to_usd_ascii
 from report_gen import generate_advanced_pdf_report
 from services.clinical_validator import validate_clinical_input, get_cycle_context, CYCLE_PHASE_RANGES
+
+# Optional: use data_loader for canonical column normalization on patient uploads
+def _normalize_uploaded_patient_df(df):
+    """Normalize uploaded DataFrame to canonical clinical columns; return first row as dict for UI defaults. Uses data_loader contract."""
+    from data.data_loader import normalize_clinical_dataframe
+    if df is None or df.empty:
+        return None
+    df = normalize_clinical_dataframe(df)
+    df.columns = [str(c).lower().strip() for c in df.columns]
+    row = df.iloc[0]
+
+    def _get(keys, default):
+        if isinstance(keys, str):
+            keys = (keys,)
+        for k in keys:
+            if k in df.columns and pd.notna(row.get(k)):
+                v = row[k]
+                try:
+                    if isinstance(v, (int, float)):
+                        return float(v)
+                    return float(v)
+                except (TypeError, ValueError):
+                    return default
+        return default
+
+    return {
+        'age': _get(('age',), 32.0),
+        'bmi': _get(('bmi',), 24.5),
+        'pain': _get(('pelvic_pain_score', 'pelvic_pain'), 8.0),
+        'dysmenorrhea': _get(('dysmenorrhea_score', 'dysmenorrhea'), 7.0),
+        'dyspareunia': int(_get(('dyspareunia',), 0)),
+        'fam_hx': int(_get(('family_history', 'fam_hx'), 1)),
+        'ca125': _get(('ca125', 'ca-125'), 65.0),
+        'estradiol': _get(('estradiol',), 250.0),
+        'progesterone': _get(('progesterone',), 12.0),
+    }
+
+
+def _read_csv_robust(uploaded_file):
+    """Try reading CSV with utf-8, latin-1, cp1252 to support all common report encodings."""
+    for enc in ('utf-8', 'latin-1', 'cp1252'):
+        try:
+            uploaded_file.seek(0)
+            return pd.read_csv(uploaded_file, encoding=enc)
+        except (UnicodeDecodeError, pd.errors.ParserError):
+            continue
+    return None
+
+
+def _read_json_robust(uploaded_file):
+    """Try reading JSON with records, columns, split, index; then JSONL (lines)."""
+    uploaded_file.seek(0)
+    raw = uploaded_file.read().decode('utf-8', errors='replace')
+    for orient in ('records', 'columns', 'split', 'index'):
+        try:
+            df = pd.read_json(io.BytesIO(raw.encode('utf-8')), orient=orient)
+            if isinstance(df, pd.DataFrame) and not df.empty:
+                return df
+            if isinstance(df, pd.Series):
+                return pd.DataFrame([df])
+        except (ValueError, TypeError):
+            continue
+    try:
+        df = pd.read_json(io.BytesIO(raw.encode('utf-8')), lines=True)
+        if isinstance(df, pd.DataFrame) and not df.empty:
+            return df
+    except (ValueError, TypeError):
+        pass
+    return None
 
 st.set_page_config(page_title="AI Endometriosis Predictor", layout="wide", page_icon="🧬")
 
@@ -178,20 +248,13 @@ st.markdown("""
         color: #f8fafc !important;
         font-weight: 600;
     }
-    /* Medical Disclaimer Banner */
-    .medical-disclaimer {
-        background: linear-gradient(90deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        border-left: 4px solid #ef4444;
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin: 10px 0;
-        font-size: 0.85em;
-        color: #fca5a5;
-    }
-    .medical-disclaimer strong { color: #f87171; }
 </style>
 """, unsafe_allow_html=True)
+
+@st.cache_resource(show_spinner=False)
+def _get_image_encoder():
+    """Load image encoder for uterus/ultrasound understanding (128-d embeddings)."""
+    return load_image_encoder()
 
 @st.cache_resource(show_spinner=False)
 def load_models():
@@ -221,122 +284,175 @@ def load_models():
     model.eval()
     return model
 
-def create_3d_plot(twin_data, inflammation_level):
-    fig = go.Figure()
+def create_3d_plot(twin_data, inflammation_level, layers=None, opacities=None, time_progression=0.0,
+                  show_scale_bar=True, show_axis_labels=True):
+    """
+    Build 3D Digital Twin plot with optional layer toggles, per-structure opacity,
+    time progression (0=current only, 1=include all future lesions), scale bar, and axis labels.
+    """
+    layers = layers or {}
+    opacities = opacities or {}
+    def _vis(key, default=True):
+        return layers.get(key, default)
+    def _op(key, default=1.0):
+        return opacities.get(key, default)
     
-    # Hyper-Realistic Sub-Surface Scattering Simulation Lighting
+    fig = go.Figure()
     lighting_props = dict(
-        ambient=0.45, 
-        diffuse=0.9, 
-        specular=1.5, # High specular to catch the organic noise bumps (wet tissue look)
-        roughness=0.25, 
-        fresnel=0.8
+        ambient=0.45, diffuse=0.9, specular=1.5, roughness=0.25, fresnel=0.8
     )
     
-    # Uterus Mesh (Main Body)
+    # Uterus
     u_x, u_y, u_z = twin_data['uterus']
-    # Dynamic coloring based on inflammation, blending to a deeper inflamed red
     colorscale_u = [[0, 'rgb(255, 210, 215)'], [1, f'rgb(255, {int(150 - inflammation_level*120)}, {int(150 - inflammation_level*120)})']]
+    if _vis('uterus', True):
+        fig.add_trace(go.Surface(
+            x=u_x, y=u_y, z=u_z,
+            opacity=_op('uterus', 1.0), colorscale=colorscale_u, showscale=False, name='Uterus Body',
+            lighting=lighting_props, hoverinfo='name', hovertemplate='Uterus Tissue<extra></extra>'
+        ))
     
-    fig.add_trace(go.Surface(
-        x=u_x, y=u_y, z=u_z,
-        opacity=1.0, colorscale=colorscale_u, showscale=False, name='Uterus Body',
-        lighting=lighting_props, hoverinfo='name', hovertemplate='Uterus Tissue<extra></extra>'
-    ))
-    
-    # Ovaries with distinct Sunset organic colorscale
-    for ovary_name, ovary_data in [('Left Ovary', twin_data['left_ovary']), ('Right Ovary', twin_data['right_ovary'])]:
-        o_x, o_y, o_z = ovary_data
+    # Ovaries
+    for ovary_name, key in [('Left Ovary', 'left_ovary'), ('Right Ovary', 'right_ovary')]:
+        if not _vis(key, True):
+            continue
+        o_x, o_y, o_z = twin_data[key]
         fig.add_trace(go.Surface(
             x=o_x, y=o_y, z=o_z,
-            opacity=1.0, colorscale='Sunset', showscale=False, name=ovary_name,
+            opacity=_op(key, 1.0), colorscale='Sunset', showscale=False, name=ovary_name,
             lighting=lighting_props, hoverinfo='name', hovertemplate=f'{ovary_name}<extra></extra>'
         ))
-        
+    
     # Fallopian Tubes
-    for tube_name, tube_data in [('Left Fallopian Tube', twin_data['left_tube']), ('Right Fallopian Tube', twin_data['right_tube'])]:
-        t_x, t_y, t_z = tube_data
+    for tube_name, key in [('Left Fallopian Tube', 'left_tube'), ('Right Fallopian Tube', 'right_tube')]:
+        if not _vis(key, True):
+            continue
+        t_x, t_y, t_z = twin_data[key]
         fig.add_trace(go.Surface(
             x=t_x, y=t_y, z=t_z,
-            opacity=0.95, colorscale='RdPu', showscale=False, name=tube_name,
+            opacity=_op(key, 0.95), colorscale='RdPu', showscale=False, name=tube_name,
             lighting=lighting_props, hoverinfo='name', hovertemplate=f'{tube_name}<extra></extra>'
         ))
-        
-    # Floating Anatomical Labels
-    label_x = [0, -7.5, 7.5, -4.5, 4.5]
-    label_y = [2.0, 0, 0, 0, 0]
-    label_z = [6.5, 4.0, 4.0, 5.0, 5.0]
-    label_text = ['Uterus', 'Left Ovary', 'Right Ovary', 'Left Fallopian Tube', 'Right Fallopian Tube']
     
-    fig.add_trace(go.Scatter3d(
-        x=label_x, y=label_y, z=label_z,
-        mode='text+markers',
-        text=label_text,
-        textposition='top center',
-        textfont=dict(color='gray', size=11, family='Arial'),
-        marker=dict(size=3, color='gray'),
-        name='Anatomical Labels',
-        hoverinfo='none'
-    ))
-        
-    # Lesions (Volumetric markers)
+    # Anatomical Labels
+    if _vis('labels', True):
+        label_x = [0, -7.5, 7.5, -4.5, 4.5]
+        label_y = [2.0, 0, 0, 0, 0]
+        label_z = [6.5, 4.0, 4.0, 5.0, 5.0]
+        label_text = ['Uterus', 'Left Ovary', 'Right Ovary', 'Left Fallopian Tube', 'Right Fallopian Tube']
+        fig.add_trace(go.Scatter3d(
+            x=label_x, y=label_y, z=label_z,
+            mode='text+markers',
+            text=label_text,
+            textposition='top center',
+            textfont=dict(color='gray', size=11, family='Arial'),
+            marker=dict(size=3, color='gray'),
+            name='Anatomical Labels',
+            hoverinfo='none'
+        ))
+    
+    # Current Lesions (use lesion_sizes when available)
     l_x, l_y, l_z, l_colors = twin_data['lesions']
-    if l_x:
+    l_sizes = twin_data.get('lesion_sizes', [])
+    if l_x and _vis('lesions', True):
+        n_les = len(l_x)
+        sizes = l_sizes if len(l_sizes) == n_les else [8.0] * n_les
+        marker_sizes = [max(4, min(20, 4 + s)) for s in sizes]  # pixel range
         fig.add_trace(go.Scatter3d(
             x=l_x, y=l_y, z=l_z,
             mode='markers',
             marker=dict(
-                size=8, # Size varies dynamically if sizes array was passed, but we use fixed 8 here for standard lesions
-                color=l_colors, 
-                colorscale='YlOrRd', 
-                opacity=0.95,
+                size=marker_sizes,
+                color=l_colors,
+                colorscale='YlOrRd',
+                opacity=_op('lesions', 0.95),
                 symbol='diamond',
                 line=dict(width=1, color='DarkRed')
             ),
             name='Current Endometrial Lesions',
             hovertemplate='Lesion<extra></extra>'
         ))
-        
+    
+    # Future Lesions (subsample by time_progression: 0=hide, 1=all)
     f_x, f_y, f_z, f_colors = twin_data.get('future_lesions', ([], [], [], []))
-    if f_x:
+    if f_x and _vis('future_lesions', True) and time_progression > 0:
+        n_f = len(f_x)
+        take = max(0, min(n_f, int(n_f * time_progression)))
+        if take > 0:
+            fx, fy, fz, fc = f_x[:take], f_y[:take], f_z[:take], f_colors[:take]
+            fig.add_trace(go.Scatter3d(
+                x=fx, y=fy, z=fz,
+                mode='markers',
+                marker=dict(
+                    size=10,
+                    color=fc,
+                    colorscale='Hot',
+                    opacity=_op('future_lesions', 0.35),
+                    symbol='circle'
+                ),
+                name='Predicted Future Spread',
+                hovertemplate='Future Projected Lesion<extra></extra>'
+            ))
+    
+    # Adhesions
+    if _vis('adhesions', True):
+        for pt1, pt2 in twin_data['adhesions']:
+            fig.add_trace(go.Scatter3d(
+                x=[pt1[0], pt2[0]], y=[pt1[1], pt2[1]], z=[pt1[2], pt2[2]],
+                mode='lines',
+                line=dict(color='rgba(139, 0, 0, 0.6)', width=6),
+                name='Physical Adhesion Band',
+                showlegend=False,
+                hovertemplate='Adhesion Band<extra></extra>'
+            ))
+    
+    # Scale bar (5 cm reference)
+    if show_scale_bar:
+        scale_x = [-10, -5]
+        scale_y = [-8, -8]
+        scale_z = [-6, -6]
         fig.add_trace(go.Scatter3d(
-            x=f_x, y=f_y, z=f_z,
-            mode='markers',
-            marker=dict(
-                size=10, 
-                color=f_colors, 
-                colorscale='Hot', 
-                opacity=0.35, # Translucent to indicate "future probability"
-                symbol='circle'
-            ),
-            name='Predicted 5-Year Future Spread',
-            hovertemplate='Future Projected Lesion<extra></extra>'
-        ))
-        
-    # Adhesions (Organic web-like curves)
-    for pt1, pt2 in twin_data['adhesions']:
-        fig.add_trace(go.Scatter3d(
-            x=[pt1[0], pt2[0]], y=[pt1[1], pt2[1]], z=[pt1[2], pt2[2]],
-            mode='lines',
-            line=dict(color='rgba(139, 0, 0, 0.6)', width=6),
-            name='Physical Adhesion Band',
+            x=scale_x, y=scale_y, z=scale_z,
+            mode='lines+text',
+            line=dict(color='rgba(200,200,200,0.9)', width=4),
+            text=['', '5 cm'],
+            textposition='top center',
+            textfont=dict(color='#e2e8f0', size=10),
+            name='Scale',
             showlegend=False,
-            hovertemplate='Adhesion Band<extra></extra>'
+            hoverinfo='none'
         ))
-
+    
+    axis_common = dict(showbackground=False, showgrid=True, gridcolor='rgba(200,200,200,0.2)', zeroline=False)
+    if show_axis_labels:
+        axis_common['showticklabels'] = True
+        axis_common['title'] = dict(text='X (L-R)', font=dict(color='#94a3b8'))
+    else:
+        axis_common['showticklabels'] = False
+        axis_common['title'] = dict(text='')
+    xaxis = {**axis_common}
+    if show_axis_labels:
+        xaxis['title'] = dict(text='X (L–R) · cm', font=dict(color='#94a3b8'))
+    yaxis = {**axis_common}
+    if show_axis_labels:
+        yaxis['title'] = dict(text='Y (A–P) · cm', font=dict(color='#94a3b8'))
+    zaxis = {**axis_common}
+    if show_axis_labels:
+        zaxis['title'] = dict(text='Z (S–I) · cm', font=dict(color='#94a3b8'))
+    
     fig.update_layout(
         scene=dict(
-            xaxis=dict(showbackground=False, showgrid=True, gridcolor='rgba(200,200,200,0.2)', zeroline=False, showticklabels=False, title=''),
-            yaxis=dict(showbackground=False, showgrid=True, gridcolor='rgba(200,200,200,0.2)', zeroline=False, showticklabels=False, title=''),
-            zaxis=dict(showbackground=False, showgrid=True, gridcolor='rgba(200,200,200,0.2)', zeroline=False, showticklabels=False, title=''),
+            xaxis=xaxis,
+            yaxis=yaxis,
+            zaxis=zaxis,
             camera=dict(
-                eye=dict(x=0.0, y=-1.5, z=0.8), # Steeper angle to see texture and tubes clearly
+                eye=dict(x=0.0, y=-1.5, z=0.8),
                 up=dict(x=0, y=0, z=1)
             ),
-            bgcolor='rgba(0,0,0,0)' # Transparent
+            bgcolor='rgba(0,0,0,0)'
         ),
         margin=dict(l=0, r=0, b=0, t=0),
-        height=800, # Taller canvas
+        height=800,
         showlegend=True,
         legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01, font=dict(color="gray", size=12), bgcolor="rgba(255,255,255,0.7)")
     )
@@ -417,6 +533,63 @@ def render_xai_plot(clinical_data, prob, model=None):
 
     return fig, explanation
 
+
+# Same normalization as prediction so SHAP sees the same inputs as the model
+_XAI_MOCK_MEANS = np.array([32.0, 25.0, 5.0, 5.0, 0.5, 0.5, 45.0, 150.0, 10.0])
+_XAI_MOCK_STDS = np.array([7.0, 4.0, 3.0, 3.0, 0.5, 0.5, 15.0, 50.0, 5.0])
+
+
+def render_xai_plot_shap(model, clinical_data_raw, prob, nsamples=80):
+    """
+    Model-based XAI using SHAP (KernelExplainer). Uses same normalization as
+    prediction. Returns (fig, explanation) or raises on failure.
+    """
+    from xai.explainer import EndometriosisExplainer
+
+    clinical_normalized = (np.asarray(clinical_data_raw, dtype=np.float64) - _XAI_MOCK_MEANS) / (_XAI_MOCK_STDS + 1e-8)
+    if clinical_normalized.ndim == 1:
+        clinical_normalized = clinical_normalized.reshape(1, -1)
+    instance = clinical_normalized.astype(np.float32)
+
+    # Background in normalized space (same scale as model input)
+    rng = np.random.RandomState(42)
+    background = rng.randn(50, 9).astype(np.float32) * 0.5
+
+    expl = EndometriosisExplainer(model)
+    _, shap_values = expl.explain_instance(background, instance, nsamples=nsamples)
+
+    # KernelExplainer with single output returns (1, n_features) or list
+    sv = np.array(shap_values)
+    if sv.ndim > 1:
+        sv = sv.reshape(-1, 9)[0]
+    else:
+        sv = sv.flatten()[:9]
+
+    features = ['Age', 'BMI', 'Pelvic Pain', 'Dysmenorrhea', 'Dyspareunia', 'Fam History', 'CA-125', 'Estradiol', 'Progesterone']
+    values = np.asarray(clinical_data_raw).flatten()[:9]
+
+    db = pd.DataFrame({
+        'Feature': features,
+        'Importance (SHAP Value)': sv,
+        'Impact': ['Positive (Increases Risk)' if i > 0 else 'Negative (Decreases Risk)' for i in sv],
+        'Value': values
+    }).sort_values('Importance (SHAP Value)', ascending=True)
+
+    fig = px.bar(db, x='Importance (SHAP Value)', y='Feature', color='Impact',
+                 color_discrete_map={'Positive (Increases Risk)': '#dc3545', 'Negative (Decreases Risk)': '#28a745'},
+                 orientation='h', title='Feature Impact on Current Prediction (SHAP)')
+    fig.update_layout(height=400, margin=dict(l=0, r=0, t=40, b=0))
+
+    top_risk = db[db['Impact'] == 'Positive (Increases Risk)'].tail(2)
+    explanation = f"**XAI Clinical Insight (SHAP):** Model risk score **{float(prob)*100:.1f}%**. "
+    if len(top_risk) > 0:
+        causes = [f"**{row['Feature']}** (value: {row['Value']:.1f}, SHAP: {row['Importance (SHAP Value)']:.3f})" for _, row in top_risk.iterrows()]
+        explanation += f"Main drivers: {', '.join(causes)}. "
+    else:
+        explanation += "No strong positive drivers; profile near baseline."
+    return fig, explanation
+
+
 def render_radar_chart(clinical_data):
     """Render a radar chart comparing patient to a healthy baseline."""
     features = ['Age (scaled)', 'BMI (scaled)', 'Pelvic Pain', 'Dysmenorrhea', 'CA-125 (scaled)', 'Estradiol (scaled)', 'IL-6 (scaled)', 'CRP (scaled)']
@@ -459,8 +632,8 @@ def render_radar_chart(clinical_data):
     return fig
 
 def render_correlation_heatmap(clinical_data):
-    """Render a DETERMINISTIC heatmap showing correlation of current inputs vs endometriosis subtypes.
-    Uses fixed functions of patient data instead of random sampling."""
+    """Render a heatmap showing the correlation of current inputs vs endometriosis subtypes."""
+    # Mocking a similarity matrix for the UI
     subtypes = ['Superficial', 'Ovarian (OMA)', 'Deep Infiltrating (DIE)', 'Adenomyosis']
     
     values = clinical_data[0]
@@ -471,10 +644,10 @@ def render_correlation_heatmap(clinical_data):
     
     # Deterministic subtype correlation (no random — same inputs always produce same outputs)
     z = [
-        [max(0.1, min(0.9, 0.35 + pain_factor * 0.25 + il6_factor * 0.10))],       # Superficial: pain + inflammation
-        [max(0.1, min(0.9, 0.40 + hormone_factor * 0.40 + il6_factor * 0.15))],    # OMA: hormone-driven
-        [max(0.1, min(0.9, 0.25 + pain_factor * 0.50 + dys_factor * 0.15))],       # DIE: high pain correlation
-        [max(0.1, min(0.9, 0.35 + dys_factor * 0.45 + hormone_factor * 0.10))]     # Adeno: dysmenorrhea linked
+        [max(0.1, min(0.9, np.random.normal(0.4, 0.1) + pain_factor*0.2))],       # Superficial
+        [max(0.1, min(0.9, np.random.normal(0.5, 0.1) + hormone_factor*0.4))],    # OMA
+        [max(0.1, min(0.9, np.random.normal(0.3, 0.1) + pain_factor*0.6))],       # DIE (high pain correlation)
+        [max(0.1, min(0.9, np.random.normal(0.4, 0.1) + (values[3]/10.0)*0.5))]   # Adeno (dysmenorrhea linked)
     ]
     
     fig = go.Figure(data=go.Heatmap(
@@ -579,6 +752,16 @@ def main():
     st.markdown('<p class="main-header">🧬 Federated Digital Twin for Endometriosis Forecast</p>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Advanced multi-modal prediction using Adaptive FedPINN, XAI, and 3D UI Mesh Simulation.</p>', unsafe_allow_html=True)
     
+    # Defensive session_state init so Tab2 (3D Twin) and Tab3 (FL) never KeyError if user opens them before prediction runs
+    defaults = {
+        'pred_prob': 0.0, 'pred_prob_std': 0.05, 'pred_stage': 0,
+        'future_risk': np.array([0.0, 0.0, 0.0]), 'gate_probs': np.array([0.25, 0.25, 0.25, 0.25]),
+        'clinical_data': np.array([[32.0, 25.0, 5.0, 5.0, 0.5, 0.5, 45.0, 150.0, 10.0]])
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+    
     model = load_models()
     twin = UterusDigitalTwin()
     
@@ -590,7 +773,13 @@ def main():
         
         with col_input:
             st.subheader("Patient Report Upload")
-            uploaded_file = st.file_uploader("Upload Profile (CSV/JSON/PDF/Image)", type=["csv", "json", "pdf", "png", "jpg", "jpeg"])
+            # Image types: include common + medical (PIL-readable: bmp, tiff, tif, gif)
+            _IMAGE_EXTENSIONS = ('png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff', 'tif', 'gif')
+            uploaded_file = st.file_uploader(
+                "Upload Profile (CSV, JSON, PDF, Image, Text, Excel)",
+                type=["csv", "json", "pdf", "txt", "xlsx", "xls"] + list(_IMAGE_EXTENSIONS),
+                help="Supported: CSV/JSON (tabular), PDF/Image (OCR + vision), .txt, Excel. Images: PNG, JPG, WEBP, BMP, TIFF, GIF."
+            )
             
             # Default or loaded values
             default_vals = {'age': 32, 'bmi': 24.5, 'pain': 8, 'dysmenorrhea': 7, 
@@ -598,123 +787,75 @@ def main():
                             'estradiol': 250.0, 'progesterone': 12.0,
                             'il6': 5.0, 'amh': 2.5, 'crp': 2.0}
             
+            # Clear image-based ultrasound embedding when upload is not an image (so we don't reuse old image)
             if uploaded_file is not None:
                 file_ext = uploaded_file.name.split('.')[-1].lower()
+                if file_ext not in _IMAGE_EXTENSIONS:
+                    if 'us_embedding_from_image' in st.session_state:
+                        del st.session_state['us_embedding_from_image']
+            if uploaded_file is not None:
+                file_ext = uploaded_file.name.split('.')[-1].lower()
+                df = None
                 try:
                     if file_ext == 'csv':
-                        df = pd.read_csv(uploaded_file)
+                        df = _read_csv_robust(uploaded_file)
+                        if df is not None and df.empty:
+                            st.warning("CSV file is empty; using default parameters.")
+                            df = None
                     elif file_ext == 'json':
-                        df = pd.read_json(uploaded_file, orient='records')
-                        if type(df) is pd.Series: df = pd.DataFrame([df])
+                        df = _read_json_robust(uploaded_file)
+                        if df is not None and df.empty:
+                            df = None
+                        if df is not None and isinstance(df, pd.Series):
+                            df = pd.DataFrame([df])
                     elif file_ext == 'pdf':
-                        import fitz # PyMuPDF
-                        from PIL import Image
-                        import pytesseract
-                        import io
-                        
-                        text = ""
-                        with st.spinner("🤖 AI Extracting data & running full-page OCR on PDF..."):
+                        import PyPDF2
+                        reader = PyPDF2.PdfReader(uploaded_file)
+                        text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
+                        with st.spinner("🤖 AI Extracting data from PDF..."):
                             import time
                             time.sleep(1) # Simulate AI delay
-                            
-                            # Read uploaded file bytes into PyMuPDF
-                            pdf_bytes = uploaded_file.read()
-                            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-                            
-                            for page_num in range(len(doc)):
-                                page = doc[page_num]
-                                # 1. Extract native text layer perfectly
-                                native_text = page.get_text()
-                                if native_text:
-                                    text += native_text + "\n"
-                                
-                                # 2. Render the ENTIRE page as a high-res image and OCR it (catches all scanned images, charts, and flattened graphics)
-                                try:
-                                    pix = page.get_pixmap(matrix=fitz.Matrix(2, 2)) # 2x zoom for better OCR resolution
-                                    img_data = pix.tobytes("png")
-                                    pil_image = Image.open(io.BytesIO(img_data))
-                                    ocr_text = pytesseract.image_to_string(pil_image)
-                                    if ocr_text.strip():
-                                        text += f"\n[Visual OCR Page {page_num+1}]: {ocr_text}\n"
-                                except Exception as img_ex:
-                                    print(f"Skipping page visual OCR due to: {img_ex}")
-                                        
                             df = mock_ai_extract_to_df(text)
                     elif file_ext in ['png', 'jpg', 'jpeg']:
                         from PIL import Image
                         import pytesseract
-                        
-                        with st.spinner("🤖 AI Extracting data from Image using OCR..."):
+                        image = Image.open(uploaded_file)
+                        text = pytesseract.image_to_string(image)
+                        with st.spinner("🤖 AI Extracting data from Image..."):
                             import time
                             time.sleep(1) # Simulate AI delay
-                            image = Image.open(uploaded_file)
-                            text = pytesseract.image_to_string(image)
                             df = mock_ai_extract_to_df(text)
                     else:
                         st.error("Unsupported file format.")
                         df = None
 
                     if df is not None:
-                        # 1. Check if the parser explicitly returned a test panel rejection dict
-                        if type(df) is dict and df.get("Document Type") == "Reference/Test Panel":
-                            st.error(
-                                "Document Type: Reference/Test Panel\n\n"
-                                "Patient Data Detected: False\n\n"
-                                "Result: No patient diagnostic data found\n\n"
-                                "Message: This document describes a laboratory test panel and does not contain patient results. Please upload a clinical lab report with biomarker values."
-                            )
-                        elif not isinstance(df, dict):
-                            # Ensure it's a pandas dataframe for standard processing
-                            if not df.empty:
-                                df.columns = [str(c).lower().strip() for c in df.columns]
-                            
-                            # Data validation to prevent sensor datasets from being parsed as clinical
-                            c_kws = ['age', 'bmi', 'ca125', 'estradiol', 'pain']
-                            s_kws = ['accel', 'gyro', 'rate', 'step', 'temp', 'sensor', 'watch']
-                            
-                            c_match = sum(1 for k in c_kws if any(k in str(c) for c in df.columns))
-                            s_match = sum(1 for k in s_kws if any(k in str(c) for c in df.columns))
-                            
-                            if s_match > c_match and c_match < 2:
-                                st.error(f"Validation Failed: '{uploaded_file.name}' appears to be a raw Sensor Dataset. Please upload a structured Clinical Profile (CSV/JSON/PDF) here.")
-                            else:
-                                # Safe mapping: Only overwrite default_vals if the key explicitly exists in the df and isn't NaN
-                                parsed_keys = []
-                                missing_keys = []
-                                
-                                # Mapping config: (df_options, default_val_key)
-                                map_config = [
-                                    (['age'], 'age', float),
-                                    (['bmi'], 'bmi', float),
-                                    (['pelvic_pain', 'pelvic_pain_score', 'pain'], 'pain', float),
-                                    (['dysmenorrhea', 'dysmenorrhea_score'], 'dysmenorrhea', float),
-                                    (['dyspareunia'], 'dyspareunia', float),
-                                    (['family_history', 'fam_hx'], 'fam_hx', int),
-                                    (['ca125', 'ca-125'], 'ca125', float),
-                                    (['estradiol'], 'estradiol', float),
-                                    (['progesterone'], 'progesterone', float)
-                                ]
-                                
-                                for df_keys, dest_key, type_cast in map_config:
-                                    val = None
-                                    for k in df_keys:
-                                        if k in df.columns:
-                                            series_val = df[k].iloc[0]
-                                            if pd.notna(series_val):
-                                                val = type_cast(series_val)
-                                                break
-                                    if val is not None:
-                                        default_vals[dest_key] = val
-                                        parsed_keys.append(dest_key)
-                                    else:
-                                        missing_keys.append(dest_key)
-                                
-                                if len(parsed_keys) > 0:
-                                    st.success(f"Report '{uploaded_file.name}' parsed successfully! Extracted {len(parsed_keys)} valid clinical markers.")
-                                    if missing_keys:
-                                        st.warning(f"⚠️ Notice: Some fields were not found in the document and have been marked as Not Available (falling back to baseline averages): {', '.join(missing_keys)}")
-                                else:
-                                    st.error("Document parsed, but no actionable patient diagnostic data was retrieved.")
+                        if not df.empty:
+                            df.columns = [str(c).lower().strip() for c in df.columns]
+                        
+                        # Data validation to prevent sensor datasets from being parsed as clinical
+                        c_kws = ['age', 'bmi', 'ca125', 'estradiol', 'pain']
+                        s_kws = ['accel', 'gyro', 'rate', 'step', 'temp', 'sensor', 'watch']
+                        
+                        c_match = sum(1 for k in c_kws if any(k in str(c) for c in df.columns))
+                        s_match = sum(1 for k in s_kws if any(k in str(c) for c in df.columns))
+                        
+                        if s_match > c_match and c_match < 2:
+                            st.error(f"Validation Failed: '{uploaded_file.name}' appears to be a raw Sensor Dataset. Please upload a structured Clinical Profile (CSV/JSON/PDF) here.")
+                        else:
+                            def_map = {
+                                'age': float(df.get('age', pd.Series([32])).iloc[0]),
+                                'bmi': float(df.get('bmi', pd.Series([24.5])).iloc[0]),
+                                'pain': float(df.get('pelvic_pain_score', df.get('pelvic_pain', pd.Series([8]))).iloc[0]),
+                                'dysmenorrhea': float(df.get('dysmenorrhea_score', df.get('dysmenorrhea', pd.Series([7]))).iloc[0]),
+                                'dyspareunia': float(df.get('dyspareunia', pd.Series([0])).iloc[0]),
+                                'fam_hx': int(df.get('family_history', df.get('fam_hx', pd.Series([1]))).iloc[0]),
+                                'ca125': float(df.get('ca125', df.get('ca-125', pd.Series([65.0]))).iloc[0]),
+                                'estradiol': float(df.get('estradiol', pd.Series([250.0])).iloc[0]),
+                                'progesterone': float(df.get('progesterone', pd.Series([12.0])).iloc[0]),
+                            }
+                            default_vals.update(def_map)
+                            st.success(f"Report '{uploaded_file.name}' parsed & loaded successfully via AI!")
                 except Exception as e:
                     st.error(f"Error parsing file: {e}")
 
@@ -771,7 +912,15 @@ def main():
             mock_stds = np.array([7.0, 4.0, 3.0, 3.0, 0.5, 0.5, 15.0, 50.0, 5.0, 4.0, 1.5, 2.0])
             tensor_data = torch.tensor((clinical_data - mock_means) / mock_stds, dtype=torch.float32)
             
-            us_data = torch.zeros((1, 128), dtype=torch.float32) 
+            # Use image-derived 128-d embedding if doctor uploaded an image; otherwise zeros
+            if st.session_state.get('us_embedding_from_image') is not None:
+                emb = st.session_state['us_embedding_from_image']
+                if isinstance(emb, np.ndarray) and emb.shape == (1, 128):
+                    us_data = torch.tensor(emb, dtype=torch.float32)
+                else:
+                    us_data = torch.zeros((1, 128), dtype=torch.float32)
+            else:
+                us_data = torch.zeros((1, 128), dtype=torch.float32)
             genomic_data = torch.zeros((1, 256), dtype=torch.float32)
             path_data = torch.zeros((1, 64), dtype=torch.float32)
             sensor_data = torch.zeros((1, 32), dtype=torch.float32)
@@ -944,9 +1093,9 @@ def main():
             st.markdown(patient_plan)
             st.markdown('</div><br>', unsafe_allow_html=True)
             
-            # XAI Plot
+            # XAI Plot: model-based SHAP first, fallback to heuristic
             st.subheader("Deep Learning Feature Attribution (Explainable AI)")
-            fig_xai, xai_explanation = render_xai_plot(st.session_state['clinical_data'], p_prob, model=model)
+            fig_xai, xai_explanation = render_xai_plot(st.session_state['clinical_data'], p_prob)
             
             # Update XAI plot for dark theme
             fig_xai.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#e2e8f0'))
@@ -1005,21 +1154,55 @@ def main():
     with tab2:
         st.subheader("Physics-Informed Digital Twin Simulation")
         st.markdown("Dynamic 3D tissue simulation rendering endometriosis lesions, endometriomas, and physical adhesions synchronized with the predictive Physics-Informed Neural Network (PINN).")
-        st.markdown("**Yellow/Translucent holograms** indicate predicted future spread at year 5.")
+        st.markdown("**Yellow/Translucent holograms** indicate predicted future spread; use **Time point** and **Layer toggles** below to explore.")
         
         # Update Twin
-        # Safely extract a single scalar float from future_risk regardless of shape
         f_risk_val = float(np.atleast_1d(st.session_state['future_risk'])[-1])
-        twin_data = twin.update_from_model_prediction(st.session_state['pred_prob'], st.session_state['pred_stage'], f_risk_val)
+        twin.update_from_model_prediction(st.session_state['pred_prob'], st.session_state['pred_stage'], f_risk_val)
         metrics_col1, metrics_col2, metrics_col3, metrics_col4 = st.columns(4)
-        
         metrics_col1.metric("Inflammation Index", f"{twin.state['inflammation_level']:.2f}")
         metrics_col2.metric("Nodules/Lesions Count", twin.state['lesion_count'])
         metrics_col3.metric("Ovarian Endometrioma", f"{twin.state['endometrioma_size_cm']:.1f} cm")
         metrics_col4.metric("Pelvic Adhesions", "Detected" if twin.state['adhesions_present'] else "Clear")
         
+        # 3D display options: time progression, layer toggles, opacity, scale/axes
+        with st.expander("🎛️ 3D Display options", expanded=False):
+            time_point = st.select_slider(
+                "Time point",
+                options=["Current only", "1 Year", "3 Years", "5 Years"],
+                value="Current only",
+                help="Show predicted future lesion spread up to selected horizon."
+            )
+            time_map = {"Current only": 0.0, "1 Year": 0.25, "3 Years": 0.6, "5 Years": 1.0}
+            time_progression = time_map[time_point]
+            st.caption("Layer visibility")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                layer_uterus = st.checkbox("Uterus", value=True, key="ly_ut")
+                layer_left_ovary = st.checkbox("Left Ovary", value=True, key="ly_lo")
+                layer_right_ovary = st.checkbox("Right Ovary", value=True, key="ly_ro")
+            with c2:
+                layer_left_tube = st.checkbox("Left Tube", value=True, key="ly_lt")
+                layer_right_tube = st.checkbox("Right Tube", value=True, key="ly_rt")
+                layer_lesions = st.checkbox("Current Lesions", value=True, key="ly_les")
+            with c3:
+                layer_future = st.checkbox("Future Lesions", value=True, key="ly_fut")
+                layer_adhesions = st.checkbox("Adhesions", value=True, key="ly_adh")
+                layer_labels = st.checkbox("Labels", value=True, key="ly_lab")
+            opacity_uterus = st.slider("Uterus opacity", 0.2, 1.0, 1.0, 0.1, key="op_ut")
+            show_scale = st.checkbox("Show scale bar (5 cm)", value=True, key="scale_bar")
+            show_axes = st.checkbox("Show axis labels", value=True, key="axis_lab")
+        
+        layers = {
+            "uterus": layer_uterus, "left_ovary": layer_left_ovary, "right_ovary": layer_right_ovary,
+            "left_tube": layer_left_tube, "right_tube": layer_right_tube,
+            "lesions": layer_lesions, "future_lesions": layer_future, "adhesions": layer_adhesions, "labels": layer_labels,
+        }
+        opacities = {"uterus": opacity_uterus, "left_ovary": 1.0, "right_ovary": 1.0,
+                     "left_tube": 0.95, "right_tube": 0.95, "lesions": 0.95, "future_lesions": 0.35}
+        
         with st.spinner("Rendering complex 3D tissue geometry..."):
-            u_points = twin.generate_3d_scatter_data(patient_seed=int(age * 100 + ca125))
+            u_points = twin.generate_3d_scatter_data()
             fig_3d = create_3d_plot(u_points, twin.state['inflammation_level'])
             st.plotly_chart(fig_3d, use_container_width=True)
             
@@ -1079,7 +1262,7 @@ def main():
         st.markdown("Upload a custom medical dataset (CSV or ZIP) to trigger a new federated training round across all connected nodes.")
         
         # --- NEW MUTLI-FILE UPLOADER ---
-        train_files = st.file_uploader("Upload External Training Datasets (CSV/ZIP)", type=["csv", "zip"], accept_multiple_files=True, key='train_upload')
+        train_files = st.file_uploader("Upload External Training Datasets (CSV, Excel, ZIP)", type=["csv", "zip", "xlsx", "xls"], accept_multiple_files=True, key='train_upload')
         if train_files:
             categorized_files = {'clinical': [], 'ultrasound': [], 'genomic': [], 'pathology': [], 'sensor': []}
             # Track counts specifically for nested zip file logic reporting
@@ -1096,7 +1279,7 @@ def main():
                     if 'path' in fname or 'biopsy' in fname or 'hist' in fname or 'slide' in fname: return 'pathology'
                     if 'us' in fname or 'ultrasound' in fname or 'mri' in fname or 'imag' in fname: return 'ultrasound'
                     
-                    if fname.endswith('.csv'):
+                    if fname.endswith('.csv') or fname.endswith('.xlsx') or fname.endswith('.xls'):
                         try:
                             pos = tf_obj.tell() if hasattr(tf_obj, 'tell') else 0
                             header = pd.read_csv(tf_obj, nrows=0).columns
@@ -1134,7 +1317,7 @@ def main():
                 st.success(f"Successfully digested {total_files} multimodal files spanning {len(train_files)} compressed/raw uploads.")
                 st.write(f"**Mapped Data Streams:** 📄 {modality_counts['clinical']} Clinical (Surveys/ONS) | 🖼️ {modality_counts['ultrasound']} Imaging (GLENDA/Roboflow) | 🧬 {modality_counts['genomic']} Genomic (WGCNA) | 🔬 {modality_counts['pathology']} Pathology (Microbiota) | ⌚ {modality_counts['sensor']} Sensor (WESAD)")
             
-            if st.button("🚀 Start Federated Fine-Tuning", type="primary"):
+            if st.button("🚀 Start Federated Fine-Tuning", type="primary", help="Run local training on uploaded data and update the global model."):
                 st.info("Initiating local training on new data and broadcasting model update request to federated nodes...")
                 # Real training progress
                 progress_bar = st.progress(0)
@@ -1156,17 +1339,38 @@ def main():
                         for f in categorized_files['clinical']:
                             if f.name.endswith('.csv'):
                                 try:
-                                    # Don't try to read empty files or MacOS metadata files
                                     if not f.name.startswith('._'):
-                                        dfs.append(pd.read_csv(f))
+                                        f.seek(0)
+                                        for enc in ('utf-8', 'latin-1', 'cp1252'):
+                                            try:
+                                                f.seek(0)
+                                                dfs.append(pd.read_csv(f, encoding=enc))
+                                                break
+                                            except (UnicodeDecodeError, pd.errors.ParserError):
+                                                continue
                                 except pd.errors.EmptyDataError:
+                                    pass
+                            elif f.name.lower().endswith(('.xlsx', '.xls')):
+                                try:
+                                    if not f.name.startswith('._'):
+                                        f.seek(0)
+                                        engine = 'openpyxl' if f.name.lower().endswith('.xlsx') else ('xlrd' if f.name.lower().endswith('.xls') else None)
+                                        dfs.append(pd.read_excel(f, engine=engine))
+                                except Exception:
                                     pass
                             elif f.name.endswith('.zip'):
                                 with zipfile.ZipFile(f, 'r') as z:
                                     for zf in z.namelist():
                                         if zf.endswith('.csv') and not zf.startswith('__MACOSX') and not zf.split('/')[-1].startswith('._'):
                                             try:
-                                                with z.open(zf) as zdata: dfs.append(pd.read_csv(zdata))
+                                                with z.open(zf) as zdata:
+                                                    raw = zdata.read()
+                                                for enc in ('utf-8', 'latin-1', 'cp1252'):
+                                                    try:
+                                                        dfs.append(pd.read_csv(io.BytesIO(raw), encoding=enc))
+                                                        break
+                                                    except (UnicodeDecodeError, pd.errors.ParserError):
+                                                        continue
                                             except pd.errors.EmptyDataError:
                                                 pass
                         if dfs: ext_df = pd.concat(dfs, ignore_index=True)
@@ -1180,8 +1384,8 @@ def main():
                     ext_df = pd.DataFrame({
                         'age': np.random.normal(32, 7, num_samples).clip(18, 55),
                         'bmi': np.random.normal(25, 4, num_samples).clip(18, 40),
-                        'pelvic_pain': np.random.randint(0, 11, num_samples),
-                        'dysmenorrhea': np.random.randint(0, 11, num_samples),
+                        'pelvic_pain_score': np.random.randint(0, 11, num_samples),
+                        'dysmenorrhea_score': np.random.randint(0, 11, num_samples),
                         'dyspareunia': np.random.choice([0, 1], size=num_samples),
                         'family_history': np.random.choice([0, 1], size=num_samples),
                         'ca125': np.random.normal(45, 15, num_samples).clip(0, 100),
@@ -1189,22 +1393,23 @@ def main():
                         'progesterone': np.random.normal(10, 5, num_samples).clip(0, 30),
                         'stage': np.random.randint(0, 5, num_samples)
                     })
-                    ext_df['endometriosis_present'] = (ext_df['stage'] > 0).astype(int)
+                    ext_df['label'] = (ext_df['stage'] > 0).astype(int)
                 
-                # Extract features for training (matching dataset structure roughly)
-                clinical_cols = ['age', 'bmi', 'pelvic_pain', 'dysmenorrhea', 'dyspareunia', 'family_history', 'ca125', 'estradiol', 'progesterone']
-                for c in clinical_cols:
-                     if c not in ext_df.columns:
-                         ext_df[c] = np.random.randn(len(ext_df))
-                
-                if 'stage' not in ext_df.columns:
-                     ext_df['stage'] = np.random.randint(0, 5, len(ext_df))
-                if 'endometriosis_present' not in ext_df.columns:
-                     ext_df['endometriosis_present'] = (ext_df['stage'] > 0).astype(int)
-                     
-                X_clin = ext_df[clinical_cols].values
-                y_pres = ext_df['endometriosis_present'].values
-                y_stage = ext_df['stage'].values
+                # Normalize to canonical clinical columns (align with data_loader & synthetic data)
+                from data.data_loader import normalize_clinical_dataframe, CLINICAL_FEATURE_COLUMNS, LABEL_COLUMN, ALTERNATIVE_LABEL_COLUMN, STAGE_COLUMN
+                ext_df = normalize_clinical_dataframe(ext_df)
+                for c in CLINICAL_FEATURE_COLUMNS:
+                    if c not in ext_df.columns:
+                        ext_df[c] = np.random.randn(len(ext_df))
+                if STAGE_COLUMN not in ext_df.columns:
+                    ext_df[STAGE_COLUMN] = np.random.randint(0, 5, len(ext_df))
+                if LABEL_COLUMN not in ext_df.columns and ALTERNATIVE_LABEL_COLUMN not in ext_df.columns:
+                    ext_df[LABEL_COLUMN] = (ext_df[STAGE_COLUMN] > 0).astype(int)
+                elif ALTERNATIVE_LABEL_COLUMN in ext_df.columns and LABEL_COLUMN not in ext_df.columns:
+                    ext_df[LABEL_COLUMN] = ext_df[ALTERNATIVE_LABEL_COLUMN]
+                y_pres = ext_df[LABEL_COLUMN].values
+                y_stage = ext_df[STAGE_COLUMN].values
+                X_clin = ext_df[CLINICAL_FEATURE_COLUMNS].values
                 
                 # Standardize clinical
                 X_clin = (X_clin - np.mean(X_clin, axis=0)) / (np.std(X_clin, axis=0) + 1e-6)

@@ -1,0 +1,238 @@
+{
+  "root": "H:\\Akash\\DT\\endometriosis_fedpinn\\dataset",
+  "data_types_available": [
+    "clinical",
+    "ultrasound"
+  ],
+  "by_data_type": {
+    "clinical": [
+      {
+        "path": "clinical_hormonal_data.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "columns: 12",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_1/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "columns: 12",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_2/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "columns: 12",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_3/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "columns: 12",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_4/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "columns: 12",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_5/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "columns: 12",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      }
+    ],
+    "ultrasound": [
+      {
+        "path": "ultrasound_embeddings.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          2500,
+          128
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_1/us_embeddings.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          128
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_2/us_embeddings.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          128
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_3/us_embeddings.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          128
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_4/us_embeddings.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          128
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_5/us_embeddings.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          128
+        ],
+        "columns_sample": null
+      }
+    ]
+  },
+  "clinical_ready_files": [
+    "clinical_hormonal_data.csv",
+    "clients/client_1/clinical.csv",
+    "clients/client_2/clinical.csv",
+    "clients/client_3/clinical.csv",
+    "clients/client_4/clinical.csv",
+    "clients/client_5/clinical.csv"
+  ],
+  "supported_for_training": {
+    "clinical": [
+      "clinical_hormonal_data.csv",
+      "clients/client_1/clinical.csv",
+      "clients/client_2/clinical.csv",
+      "clients/client_3/clinical.csv",
+      "clients/client_4/clinical.csv",
+      "clients/client_5/clinical.csv"
+    ],
+    "ultrasound": [
+      "ultrasound_embeddings.npy",
+      "clients/client_1/us_embeddings.npy",
+      "clients/client_2/us_embeddings.npy",
+      "clients/client_3/us_embeddings.npy",
+      "clients/client_4/us_embeddings.npy",
+      "clients/client_5/us_embeddings.npy"
+    ],
+    "genomic": [],
+    "pathology": [],
+    "sensor": []
+  },
+  "canonical_clinical_columns": [
+    "age",
+    "bmi",
+    "pelvic_pain_score",
+    "dysmenorrhea_score",
+    "dyspareunia",
+    "family_history",
+    "ca125",
+    "estradiol",
+    "progesterone"
+  ],
+  "label_columns": [
+    "label",
+    "endometriosis_present"
+  ],
+  "stage_column": "stage"
+}
