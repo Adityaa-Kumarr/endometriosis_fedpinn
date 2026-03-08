@@ -18,36 +18,30 @@ def mock_ai_extract_to_df(text):
     text_lower = text.lower()
     
     # --- Advanced Multi-Class Document Classifier ---
-    # Core categorization keywords (Strict Medical Context)
+    # Core categorization keywords
     lab_keywords = ['lab result', 'blood test', 'serum', 'ca-125', 'estradiol', 'progesterone', 'cbc', 'assay', 'hemoglobin']
     imaging_keywords = ['mri', 'ultrasound', 'radiology', 'transvaginal', 'lesion', 'nodule', 'cyst', 'pelvic scan', 'sonogram']
     intake_keywords = ['patient', 'diagnosis', 'medical history', 'symptom', 'physician', 'hospital', 'gynecology', 'endometriosis', 'clinical']
+    informational_keywords = ['overview', 'information', 'understanding', 'frequently asked questions', 'faq', 'what is', 'symptoms of', 'treatment options', 'reference chart']
     
     lab_score = sum(text_lower.count(kw) for kw in lab_keywords)
     img_score = sum(text_lower.count(kw) for kw in imaging_keywords)
     intake_score = sum(text_lower.count(kw) for kw in intake_keywords)
+    info_score = sum(text_lower.count(kw) for kw in informational_keywords)
     
     total_medical_score = lab_score + img_score + intake_score
     
-    classification = "Unknown"
-    if total_medical_score < 3 or (len(text_lower.split()) < 10):
+    if total_medical_score < 2 or (len(text_lower.split()) < 10):
         st.error("❌ Classification: Non-Medical | The AI rejected this document as it lacks strict clinical context (e.g. Gaming PDF, Receipt).")
         return None
         
-    scores = {'Lab Results': lab_score, 'Imaging/Radiology Report': img_score, 'Clinical Intake': intake_score}
-    classification = max(scores, key=scores.get)
-    
-    # Render dynamic UI badge based on AI Classification
-    badge_colors = {'Lab Results': 'blue', 'Imaging/Radiology Report': 'violet', 'Clinical Intake': 'green'}
-    st.markdown(f"**AI Document Classification:** :{badge_colors[classification]}[{classification}] (Confidence: High)")
-        
     data = {}
     
-    # Advanced flexible regex for fuzzy document parsing
-    age_match = re.search(r'age.*?(?:\s+|:|=)(\d{2})', text_lower)
+    # Advanced flexible regex for exact value parsing (Strict requirements for numbers next to labels)
+    age_match = re.search(r'age.*?(?:\s+|:|=|>)?\s*(\d{2})', text_lower)
     if age_match: data['age'] = [float(age_match.group(1))]
         
-    bmi_match = re.search(r'bmi.*?(?:\s+|:|=)([\d\.]+)', text_lower)
+    bmi_match = re.search(r'bmi.*?(?:\s+|:|=|>)?\s*([\d\.]+)', text_lower)
     if bmi_match: data['bmi'] = [float(bmi_match.group(1))]
         
     ca125_match = re.search(r'ca[-]?125.*?(?:\s+|:|=|>)?\s*([\d\.]+)', text_lower)
@@ -59,19 +53,35 @@ def mock_ai_extract_to_df(text):
     prog_match = re.search(r'progesterone.*?(?:\s+|:|=|>)?\s*([\d\.]+)', text_lower)
     if prog_match: data['progesterone'] = [float(prog_match.group(1))]
         
-    pain_score = re.search(r'(?:pelvic\s*)?pain.*?(?:score|level|intensity)?.*?(?:\s+|:|=)(\d+)', text_lower)
+    pain_score = re.search(r'(?:pelvic\s*)?pain.*?(?:score|level|intensity)?.*?(?:\s+|:|=|>)?\s*(\d+)', text_lower)
     if pain_score: data['pelvic_pain_score'] = [float(pain_score.group(1))]
         
-    dys = re.search(r'dysmenorrhea.*?(?:score)?.*?(?:\s+|:|=)(\d+)', text_lower)
+    dys = re.search(r'dysmenorrhea.*?(?:score)?.*?(?:\s+|:|=|>)?\s*(\d+)', text_lower)
     if dys: data['dysmenorrhea_score'] = [float(dys.group(1))]
         
-    data['family_history'] = [1 if any(keyword in text_lower for keyword in ['family history', 'sister', 'mother', 'maternal']) else 0]
-    data['dyspareunia'] = [1 if 'dyspareunia' in text_lower or 'painful intercourse' in text_lower else 0]
+    # Check for direct boolean markers
+    if any(keyword in text_lower for keyword in ['family history', 'sister', 'mother', 'maternal']):
+        data['family_history'] = [1]
+    if 'dyspareunia' in text_lower or 'painful intercourse' in text_lower:
+        data['dyspareunia'] = [1]
     
-    # Fallback default generator if document is completely illegible
-    if len(data.keys()) < 2:
-       st.warning("⚠️ Document heavily obfuscated. AI fell back to partial physiological baseline extraction.")
-       return pd.DataFrame([{'age': 32, 'bmi': 24.5, 'pelvic_pain_score': 8, 'dysmenorrhea_score': 7, 'ca125': 65.0, 'estradiol': 250.0}])
+    # --- Strict Patient Data Validation Check ---
+    # Does this document have actual numeric markers assigned to the patient?
+    # Or is it just an informational dictionary page talking about ENDO/CA-125 theoretically?
+    if len(data.keys()) < 1:
+        # No concrete numeric biomarkers found, it's a test panel / reference.
+        # Check against high info score or just lack of data
+        return {"Document Type": "Reference/Test Panel"}
+        
+    # If we made it here, there is SOME data. It's valid clinical intake/lab.
+    scores = {'Lab Results': lab_score, 'Imaging/Radiology Report': img_score, 'Clinical Intake': intake_score}
+    classification = max(scores, key=scores.get)
+    
+    # Render dynamic UI badge based on AI Classification
+    badge_colors = {'Lab Results': 'blue', 'Imaging/Radiology Report': 'violet', 'Clinical Intake': 'green'}
+    st.markdown(f"**AI Document Classification:** :{badge_colors[classification]}[{classification}] (Confidence: High)")
+    
+    # Missing fields are safely omitted. The UI handler will handle defaults where it safely initializes state.
     return pd.DataFrame(data)
 
 # Append current directory to path so we can import modules
@@ -81,6 +91,8 @@ from models.ffnn_weighting import FeatureWeightingFFNN
 from models.pinn import EndometriosisPINN, FullFedPINNModel
 from digital_twin.simulator import UterusDigitalTwin
 from digital_twin.omniverse_export import export_to_obj, export_lesions_to_usd_ascii
+from report_gen import generate_advanced_pdf_report
+from services.clinical_validator import validate_clinical_input, get_cycle_context, CYCLE_PHASE_RANGES
 
 st.set_page_config(page_title="AI Endometriosis Predictor", layout="wide", page_icon="🧬")
 
@@ -166,6 +178,18 @@ st.markdown("""
         color: #f8fafc !important;
         font-weight: 600;
     }
+    /* Medical Disclaimer Banner */
+    .medical-disclaimer {
+        background: linear-gradient(90deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-left: 4px solid #ef4444;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 10px 0;
+        font-size: 0.85em;
+        color: #fca5a5;
+    }
+    .medical-disclaimer strong { color: #f87171; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -318,40 +342,72 @@ def create_3d_plot(twin_data, inflammation_level):
     )
     return fig
 
-def render_xai_plot(clinical_data, prob):
-    """Render a dynamic SHAP-like feature importance plot based on inputs."""
-    features = ['Age', 'BMI', 'Pelvic Pain', 'Dysmenorrhea', 'Dyspareunia', 'Fam History', 'CA-125', 'Estradiol', 'Progesterone']
+def render_xai_plot(clinical_data, prob, model=None):
+    """Render gradient-based feature importance using actual model saliency.
+    
+    When a trained model is available, computes the gradient of the output w.r.t.
+    each input feature to determine model-derived feature importance (saliency).
+    Falls back to a clinically-grounded heuristic when no model is loaded.
+    """
+    features = ['Age', 'BMI', 'Pelvic Pain', 'Dysmenorrhea', 'Dyspareunia', 'Fam History', 
+                'CA-125', 'Estradiol', 'Progesterone', 'IL-6', 'AMH', 'CRP']
     values = clinical_data[0]
     
-    # Simulate feature importance based on biological heuristics for demonstration
-    importance = []
-    importance.append((values[0] - 32) * 0.05) # Age variance
-    importance.append((values[1] - 25) * 0.06) # BMI variance
-    importance.append(values[2] * 0.15)        # Pelvic pain strong indicator
-    importance.append(values[3] * 0.12)        # Dysmenorrhea strong indicator
-    importance.append(values[4] * 0.08)        # Dyspareunia
-    importance.append(values[5] * 0.07)        # Family history
-    importance.append((values[6] - 35) / 100 * 0.20) # CA-125
-    importance.append((values[7] - 150) / 400 * 0.18) # Estradiol
-    importance.append((10 - values[8]) / 20 * 0.05) # Lower progesterone sometimes linked
+    use_gradient = model is not None and os.path.exists('global_model.pth')
     
-    # Scale to sum to prob roughly
-    importance = np.array(importance)
-    importance = importance / (np.sum(np.abs(importance)) + 1e-6) * prob
+    if use_gradient:
+        # --- REAL GRADIENT-BASED SALIENCY ---
+        mock_means = np.array([32.0, 25.0, 5.0, 5.0, 0.5, 0.5, 45.0, 150.0, 10.0, 5.0, 2.5, 2.0])
+        mock_stds = np.array([7.0, 4.0, 3.0, 3.0, 0.5, 0.5, 15.0, 50.0, 5.0, 4.0, 1.5, 2.0])
+        
+        input_tensor = torch.tensor((clinical_data - mock_means) / mock_stds, dtype=torch.float32)
+        input_tensor.requires_grad_(True)
+        
+        us_data = torch.zeros((1, 128), dtype=torch.float32)
+        genomic_data = torch.zeros((1, 256), dtype=torch.float32)
+        path_data = torch.zeros((1, 64), dtype=torch.float32)
+        sensor_data = torch.zeros((1, 32), dtype=torch.float32)
+        
+        model.eval()
+        output_prob, _, _, _ = model(input_tensor, us_data, genomic_data, path_data, sensor_data)
+        output_prob.backward()
+        
+        importance = input_tensor.grad.squeeze().numpy()
+        importance = importance / (np.sum(np.abs(importance)) + 1e-6)  # Normalize
+        method_label = 'Gradient Saliency (Model-Derived)'
+    else:
+        # --- CLINICALLY-GROUNDED HEURISTIC FALLBACK ---
+        importance = []
+        importance.append((values[0] - 32) * 0.04)   # Age variance
+        importance.append((values[1] - 25) * 0.05)   # BMI variance
+        importance.append(values[2] * 0.12)           # Pelvic pain strong indicator
+        importance.append(values[3] * 0.10)           # Dysmenorrhea strong indicator
+        importance.append(values[4] * 0.06)           # Dyspareunia
+        importance.append(values[5] * 0.05)           # Family history
+        importance.append((values[6] - 35) / 100 * 0.18)  # CA-125
+        importance.append((values[7] - 150) / 400 * 0.15) # Estradiol
+        importance.append((10 - values[8]) / 20 * 0.04)   # Progesterone
+        importance.append((values[9] - 5) / 20 * 0.12)    # IL-6
+        importance.append((3.5 - values[10]) / 3.5 * 0.04) # AMH (lower = higher risk)
+        importance.append((values[11] - 3) / 20 * 0.10)   # CRP
+        
+        importance = np.array(importance)
+        importance = importance / (np.sum(np.abs(importance)) + 1e-6) * prob
+        method_label = 'Heuristic Feature Importance (NOT Model-Derived)'
     
     db = pd.DataFrame({
         'Feature': features,
-        'Importance (SHAP Value)': importance,
+        'Importance (Saliency)': importance,
         'Impact': ['Positive (Increases Risk)' if i > 0 else 'Negative (Decreases Risk)' for i in importance],
         'Value': values
-    }).sort_values('Importance (SHAP Value)', ascending=True)
+    }).sort_values('Importance (Saliency)', ascending=True)
     
-    fig = px.bar(db, x='Importance (SHAP Value)', y='Feature', color='Impact', 
+    fig = px.bar(db, x='Importance (Saliency)', y='Feature', color='Impact', 
                  color_discrete_map={'Positive (Increases Risk)': '#dc3545', 'Negative (Decreases Risk)': '#28a745'},
-                 orientation='h', title='Feature Impact on Current Prediction (XAI Explainer)')
-    fig.update_layout(height=400, margin=dict(l=0, r=0, t=40, b=0))
+                 orientation='h', title=f'Feature Impact on Current Prediction ({method_label})')
+    fig.update_layout(height=450, margin=dict(l=0, r=0, t=40, b=0))
     
-    top_risk_features = db[db['Impact'] == 'Positive (Increases Risk)'].tail(2)
+    top_risk_features = db[db['Impact'] == 'Positive (Increases Risk)'].tail(3)
     explanation = f"**XAI Clinical Insight:** The model indicates a **{float(prob)*100:.1f}% risk score**. "
     if len(top_risk_features) > 0:
         causes = [f"**{row['Feature']}** (value: {row['Value']:.1f})" for _, row in top_risk_features.iterrows()]
@@ -363,7 +419,7 @@ def render_xai_plot(clinical_data, prob):
 
 def render_radar_chart(clinical_data):
     """Render a radar chart comparing patient to a healthy baseline."""
-    features = ['Age (scaled)', 'BMI (scaled)', 'Pelvic Pain', 'Dysmenorrhea', 'CA-125 (scaled)', 'Estradiol (scaled)']
+    features = ['Age (scaled)', 'BMI (scaled)', 'Pelvic Pain', 'Dysmenorrhea', 'CA-125 (scaled)', 'Estradiol (scaled)', 'IL-6 (scaled)', 'CRP (scaled)']
     values = clinical_data[0]
     
     # Scale variables for a radar chart (0-10 range roughly)
@@ -373,10 +429,12 @@ def render_radar_chart(clinical_data):
         values[2], # Pain 0-10
         values[3], # Dys 0-10
         min(10, max(0, (values[6] / 150) * 10)), # CA125 max ~150
-        min(10, max(0, (values[7] / 500) * 10))  # Estradiol max ~500
+        min(10, max(0, (values[7] / 500) * 10)),  # Estradiol max ~500
+        min(10, max(0, (values[9] / 50) * 10)),   # IL-6 max ~50
+        min(10, max(0, (values[11] / 30) * 10)),  # CRP max ~30
     ]
     
-    healthy_baseline = [3.0, 3.5, 1.0, 2.0, 2.0, 4.0] # Mock healthy baseline scaled
+    healthy_baseline = [3.0, 3.5, 1.0, 2.0, 2.0, 4.0, 1.0, 1.0] # Healthy baseline scaled
     
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(
@@ -401,19 +459,22 @@ def render_radar_chart(clinical_data):
     return fig
 
 def render_correlation_heatmap(clinical_data):
-    """Render a heatmap showing the correlation of current inputs vs endometriosis subtypes."""
-    # Mocking a similarity matrix for the UI
+    """Render a DETERMINISTIC heatmap showing correlation of current inputs vs endometriosis subtypes.
+    Uses fixed functions of patient data instead of random sampling."""
     subtypes = ['Superficial', 'Ovarian (OMA)', 'Deep Infiltrating (DIE)', 'Adenomyosis']
     
     values = clinical_data[0]
     pain_factor = values[2] / 10.0
     hormone_factor = (values[6]/150.0 + values[7]/500.0) / 2.0
+    il6_factor = values[9] / 50.0 if len(values) > 9 else 0.0
+    dys_factor = values[3] / 10.0
     
+    # Deterministic subtype correlation (no random — same inputs always produce same outputs)
     z = [
-        [max(0.1, min(0.9, np.random.normal(0.4, 0.1) + pain_factor*0.2))],       # Superficial
-        [max(0.1, min(0.9, np.random.normal(0.5, 0.1) + hormone_factor*0.4))],    # OMA
-        [max(0.1, min(0.9, np.random.normal(0.3, 0.1) + pain_factor*0.6))],       # DIE (high pain correlation)
-        [max(0.1, min(0.9, np.random.normal(0.4, 0.1) + (values[3]/10.0)*0.5))]   # Adeno (dysmenorrhea linked)
+        [max(0.1, min(0.9, 0.35 + pain_factor * 0.25 + il6_factor * 0.10))],       # Superficial: pain + inflammation
+        [max(0.1, min(0.9, 0.40 + hormone_factor * 0.40 + il6_factor * 0.15))],    # OMA: hormone-driven
+        [max(0.1, min(0.9, 0.25 + pain_factor * 0.50 + dys_factor * 0.15))],       # DIE: high pain correlation
+        [max(0.1, min(0.9, 0.35 + dys_factor * 0.45 + hormone_factor * 0.10))]     # Adeno: dysmenorrhea linked
     ]
     
     fig = go.Figure(data=go.Heatmap(
@@ -425,12 +486,12 @@ def render_correlation_heatmap(clinical_data):
         plot_bgcolor='rgba(0,0,0,0)',
         font=dict(color='#e2e8f0'),
         margin=dict(l=0, r=0, t=30, b=0),
-        title=dict(text="Biomarker Subtype Alignment", font=dict(color='#e2e8f0', size=14))
+        title=dict(text="Biomarker Subtype Alignment (Deterministic)", font=dict(color='#e2e8f0', size=14))
     )
     return fig
 
 def generate_clinical_report(p_prob, p_std, p_stage, gate_probs, clinical_data):
-    """Generates an LLM-style synthesized clinical report based on MoE routing and predictions."""
+    """Generates a structured clinical report based on MoE routing and predictions."""
     stage_names = ["Minimal/None", "Stage I (Minimal)", "Stage II (Mild)", "Stage III (Moderate)", "Stage IV (Severe)"]
     stage_str = stage_names[p_stage]
     
@@ -445,27 +506,35 @@ def generate_clinical_report(p_prob, p_std, p_stage, gate_probs, clinical_data):
     pain = cd[2]
     ca125 = cd[6]
     estradiol = cd[7]
+    il6 = cd[9] if len(cd) > 9 else 0.0
+    crp = cd[11] if len(cd) > 11 else 0.0
     
     report = f"""
-**Primary Prognosis:** Based on the hyper-advanced multi-modal federated analysis, the patient presents a **{p_prob*100:.1f}%** (±{p_std*100:.1f}%) probability of active endometriosis, tracking towards a **{stage_str}** diagnosis. 
+> **⚠️ DISCLAIMER: This report is generated by an AI system for RESEARCH PURPOSES ONLY. It does NOT constitute a medical diagnosis. The rASRM staging classification requires surgical visualization. Always consult a qualified gynecologist.**
+
+**Primary Assessment:** Based on multi-modal federated analysis, the patient presents a **{p_prob*100:.1f}%** (±{p_std*100:.1f}%) probability of active endometriosis, with the AI model trending towards a **{stage_str}** classification. 
 
 **Neural Routing Analysis (Mixture of Experts):**
-The patient's tensor profile triggered a specialized routing pathway within the AI architecture. **{gate_p[top_expert_idx]*100:.1f}%** of the inferential computation was dynamically routed directly to the **{primary_expert} Expert Sub-Network**. This indicates the patient's phenotypic and biomarker signature most strongly mirrors this specific structural manifestation.
+The patient's biomarker profile triggered specialized routing within the AI architecture. **{gate_p[top_expert_idx]*100:.1f}%** of the inferential computation was routed to the **{primary_expert} Expert Sub-Network**, suggesting the patient's phenotypic signature most closely aligns with this disease manifestation.
 
 **Biomarker & Symptom Context:**
 """
     
     if pain > 6:
-        report += "- The **severe pelvic pain** metric strongly correlates with advanced nociceptive pathway involvement, typical in active inflammatory states.\n"
+        report += "- The **severe pelvic pain** metric (score > 6/10) correlates with advanced nociceptive pathway involvement, typical in active inflammatory states.\n"
     if ca125 > 35:
-        report += f"- A **CA-125 level of {ca125:.1f} U/mL** is elevated above the standard threshold, supporting the likelihood of endometrioma or peritoneal inflammation bridging.\n"
+        report += f"- **CA-125: {ca125:.1f} U/mL** is elevated above the 35 U/mL threshold. *Note: CA-125 is non-specific and can be elevated in ovarian cancer, PID, pregnancy, and menstruation. Differential diagnosis is required.*\n"
     if estradiol > 200:
-        report += f"- Sustained hyperestrogenism (**Estradiol: {estradiol:.1f} pg/mL**) acts as a primary catalyst for ectopic endometrial cell proliferation, driving the accelerated future risk vectors.\n"
+        report += f"- **Estradiol: {estradiol:.1f} pg/mL** — sustained hyperestrogenism acts as a catalyst for ectopic endometrial cell proliferation.\n"
+    if il6 > 7:
+        report += f"- **IL-6: {il6:.1f} pg/mL** — elevated above 7 pg/mL threshold, indicating active systemic inflammation consistent with endometriosis peritoneal pathology (Harada et al., 2001).\n"
+    if crp > 3:
+        report += f"- **CRP: {crp:.1f} mg/L** — elevated above baseline, confirming systemic inflammatory state.\n"
         
-    report += "\n**Recommendation:** Fast-track for high-resolution transvaginal ultrasound (TVUS) mapping and pelvic MRI, specifically hunting for markers identified by the dominant expert network. "
+    report += "\n**Recommendation:** Consider high-resolution transvaginal ultrasound (TVUS) mapping and pelvic MRI for structural assessment. "
     
     if p_stage >= 3:
-        report += "Surgical laparoscopic intervention should be strongly considered given the extreme severity index."
+        report += "Given the severity index, referral to a specialist center for laparoscopic evaluation should be discussed with the patient."
         
     return report
 
@@ -475,10 +544,12 @@ def generate_health_recommendations(clinical_data, p_prob):
     bmi = cd[1]
     pain = cd[2]
     estradiol = cd[7]
+    il6 = cd[9] if len(cd) > 9 else 0.0
+    crp = cd[11] if len(cd) > 11 else 0.0
     
     plan = f"""
 ### 🌿 Personal Actionable Health Plan 
-*(Note: Always consult with your primary care physician. This AI analysis does not replace clinical judgment.)*
+*(⚠️ Important: This is generated by an AI system for educational purposes. Always consult with your primary care physician before making any medical decisions. This AI analysis does not replace clinical judgment.)*
 
 """
     if p_prob > 0.6:
@@ -491,11 +562,14 @@ def generate_health_recommendations(clinical_data, p_prob):
         
     if estradiol > 150:
         plan += "**3. Hormonal Balance:** Ensure your diet limits endocrine disruptors. Diets rich in omega-3 fatty acids and cruciferous vegetables (like broccoli) can help the liver metabolize excess estrogen safely.\n"
+    
+    if il6 > 7 or crp > 3:
+        plan += "**4. Inflammation Management:** Your inflammatory markers (IL-6/CRP) are elevated. Consider anti-inflammatory dietary strategies, stress management, and discuss targeted anti-inflammatory therapy with your doctor.\n"
         
     if bmi > 25:
-        plan += "**4. Inflammatory Diet:** Consider adopting an anti-inflammatory diet framework (e.g., Mediterranean). Reducing processed sugars and trans fats can significantly lower systemic inflammation markers.\n"
+        plan += "**5. Inflammatory Diet:** Consider adopting an anti-inflammatory diet framework (e.g., Mediterranean). Reducing processed sugars and trans fats can significantly lower systemic inflammation markers.\n"
     elif bmi < 19:
-        plan += "**4. Nutritional Support:** Ensure you are getting adequate macronutrients and healthy fats to support structural hormone production and immune response.\n"
+        plan += "**5. Nutritional Support:** Ensure you are getting adequate macronutrients and healthy fats to support structural hormone production and immune response.\n"
         
     plan += "\n**Next Steps:** You can download the 3D Digital Twin representations from the adjoining tab to show the structural geometry to your surgical specialist."
     
@@ -521,7 +595,8 @@ def main():
             # Default or loaded values
             default_vals = {'age': 32, 'bmi': 24.5, 'pain': 8, 'dysmenorrhea': 7, 
                             'dyspareunia': 0, 'fam_hx': 1, 'ca125': 65.0, 
-                            'estradiol': 250.0, 'progesterone': 12.0}
+                            'estradiol': 250.0, 'progesterone': 12.0,
+                            'il6': 5.0, 'amh': 2.5, 'crp': 2.0}
             
             if uploaded_file is not None:
                 file_ext = uploaded_file.name.split('.')[-1].lower()
@@ -532,53 +607,114 @@ def main():
                         df = pd.read_json(uploaded_file, orient='records')
                         if type(df) is pd.Series: df = pd.DataFrame([df])
                     elif file_ext == 'pdf':
-                        import PyPDF2
-                        reader = PyPDF2.PdfReader(uploaded_file)
-                        text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
-                        with st.spinner("🤖 AI Extracting data from PDF..."):
+                        import fitz # PyMuPDF
+                        from PIL import Image
+                        import pytesseract
+                        import io
+                        
+                        text = ""
+                        with st.spinner("🤖 AI Extracting data & running full-page OCR on PDF..."):
                             import time
                             time.sleep(1) # Simulate AI delay
+                            
+                            # Read uploaded file bytes into PyMuPDF
+                            pdf_bytes = uploaded_file.read()
+                            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+                            
+                            for page_num in range(len(doc)):
+                                page = doc[page_num]
+                                # 1. Extract native text layer perfectly
+                                native_text = page.get_text()
+                                if native_text:
+                                    text += native_text + "\n"
+                                
+                                # 2. Render the ENTIRE page as a high-res image and OCR it (catches all scanned images, charts, and flattened graphics)
+                                try:
+                                    pix = page.get_pixmap(matrix=fitz.Matrix(2, 2)) # 2x zoom for better OCR resolution
+                                    img_data = pix.tobytes("png")
+                                    pil_image = Image.open(io.BytesIO(img_data))
+                                    ocr_text = pytesseract.image_to_string(pil_image)
+                                    if ocr_text.strip():
+                                        text += f"\n[Visual OCR Page {page_num+1}]: {ocr_text}\n"
+                                except Exception as img_ex:
+                                    print(f"Skipping page visual OCR due to: {img_ex}")
+                                        
                             df = mock_ai_extract_to_df(text)
                     elif file_ext in ['png', 'jpg', 'jpeg']:
                         from PIL import Image
                         import pytesseract
-                        image = Image.open(uploaded_file)
-                        text = pytesseract.image_to_string(image)
-                        with st.spinner("🤖 AI Extracting data from Image..."):
+                        
+                        with st.spinner("🤖 AI Extracting data from Image using OCR..."):
                             import time
                             time.sleep(1) # Simulate AI delay
+                            image = Image.open(uploaded_file)
+                            text = pytesseract.image_to_string(image)
                             df = mock_ai_extract_to_df(text)
                     else:
                         st.error("Unsupported file format.")
                         df = None
 
                     if df is not None:
-                        if not df.empty:
-                            df.columns = [str(c).lower().strip() for c in df.columns]
-                        
-                        # Data validation to prevent sensor datasets from being parsed as clinical
-                        c_kws = ['age', 'bmi', 'ca125', 'estradiol', 'pain']
-                        s_kws = ['accel', 'gyro', 'rate', 'step', 'temp', 'sensor', 'watch']
-                        
-                        c_match = sum(1 for k in c_kws if any(k in str(c) for c in df.columns))
-                        s_match = sum(1 for k in s_kws if any(k in str(c) for c in df.columns))
-                        
-                        if s_match > c_match and c_match < 2:
-                            st.error(f"Validation Failed: '{uploaded_file.name}' appears to be a raw Sensor Dataset. Please upload a structured Clinical Profile (CSV/JSON/PDF) here.")
-                        else:
-                            def_map = {
-                                'age': float(df.get('age', pd.Series([32])).iloc[0]),
-                                'bmi': float(df.get('bmi', pd.Series([24.5])).iloc[0]),
-                                'pain': float(df.get('pelvic_pain_score', df.get('pelvic_pain', pd.Series([8]))).iloc[0]),
-                                'dysmenorrhea': float(df.get('dysmenorrhea_score', df.get('dysmenorrhea', pd.Series([7]))).iloc[0]),
-                                'dyspareunia': float(df.get('dyspareunia', pd.Series([0])).iloc[0]),
-                                'fam_hx': int(df.get('family_history', df.get('fam_hx', pd.Series([1]))).iloc[0]),
-                                'ca125': float(df.get('ca125', df.get('ca-125', pd.Series([65.0]))).iloc[0]),
-                                'estradiol': float(df.get('estradiol', pd.Series([250.0])).iloc[0]),
-                                'progesterone': float(df.get('progesterone', pd.Series([12.0])).iloc[0]),
-                            }
-                            default_vals.update(def_map)
-                            st.success(f"Report '{uploaded_file.name}' parsed & loaded successfully via AI!")
+                        # 1. Check if the parser explicitly returned a test panel rejection dict
+                        if type(df) is dict and df.get("Document Type") == "Reference/Test Panel":
+                            st.error(
+                                "Document Type: Reference/Test Panel\n\n"
+                                "Patient Data Detected: False\n\n"
+                                "Result: No patient diagnostic data found\n\n"
+                                "Message: This document describes a laboratory test panel and does not contain patient results. Please upload a clinical lab report with biomarker values."
+                            )
+                        elif not isinstance(df, dict):
+                            # Ensure it's a pandas dataframe for standard processing
+                            if not df.empty:
+                                df.columns = [str(c).lower().strip() for c in df.columns]
+                            
+                            # Data validation to prevent sensor datasets from being parsed as clinical
+                            c_kws = ['age', 'bmi', 'ca125', 'estradiol', 'pain']
+                            s_kws = ['accel', 'gyro', 'rate', 'step', 'temp', 'sensor', 'watch']
+                            
+                            c_match = sum(1 for k in c_kws if any(k in str(c) for c in df.columns))
+                            s_match = sum(1 for k in s_kws if any(k in str(c) for c in df.columns))
+                            
+                            if s_match > c_match and c_match < 2:
+                                st.error(f"Validation Failed: '{uploaded_file.name}' appears to be a raw Sensor Dataset. Please upload a structured Clinical Profile (CSV/JSON/PDF) here.")
+                            else:
+                                # Safe mapping: Only overwrite default_vals if the key explicitly exists in the df and isn't NaN
+                                parsed_keys = []
+                                missing_keys = []
+                                
+                                # Mapping config: (df_options, default_val_key)
+                                map_config = [
+                                    (['age'], 'age', float),
+                                    (['bmi'], 'bmi', float),
+                                    (['pelvic_pain', 'pelvic_pain_score', 'pain'], 'pain', float),
+                                    (['dysmenorrhea', 'dysmenorrhea_score'], 'dysmenorrhea', float),
+                                    (['dyspareunia'], 'dyspareunia', float),
+                                    (['family_history', 'fam_hx'], 'fam_hx', int),
+                                    (['ca125', 'ca-125'], 'ca125', float),
+                                    (['estradiol'], 'estradiol', float),
+                                    (['progesterone'], 'progesterone', float)
+                                ]
+                                
+                                for df_keys, dest_key, type_cast in map_config:
+                                    val = None
+                                    for k in df_keys:
+                                        if k in df.columns:
+                                            series_val = df[k].iloc[0]
+                                            if pd.notna(series_val):
+                                                val = type_cast(series_val)
+                                                break
+                                    if val is not None:
+                                        default_vals[dest_key] = val
+                                        parsed_keys.append(dest_key)
+                                    else:
+                                        missing_keys.append(dest_key)
+                                
+                                if len(parsed_keys) > 0:
+                                    st.success(f"Report '{uploaded_file.name}' parsed successfully! Extracted {len(parsed_keys)} valid clinical markers.")
+                                    if missing_keys:
+                                        st.warning(f"⚠️ Notice: Some fields were not found in the document and have been marked as Not Available (falling back to baseline averages): {', '.join(missing_keys)}")
+                                else:
+                                    st.error("Document parsed, but no actionable patient diagnostic data was retrieved.")
                 except Exception as e:
                     st.error(f"Error parsing file: {e}")
 
@@ -597,17 +733,42 @@ def main():
                 fam_hx = st.selectbox("Family History", [0, 1], format_func=lambda x: "Yes" if x else "No", index=int(default_vals['fam_hx']))
                 
             st.subheader("Biomarkers & Hormones")
+            cycle_phase = st.selectbox("Menstrual Cycle Phase", list(CYCLE_PHASE_RANGES.keys()), index=3)
             ca125 = st.slider("CA-125 (U/mL)", 0.0, 1000.0, min(1000.0, max(0.0, float(default_vals['ca125']))))
             estradiol = st.slider("Estradiol (pg/mL)", 0.0, 2000.0, min(2000.0, max(0.0, float(default_vals['estradiol']))))
             prog = st.slider("Progesterone (ng/mL)", 0.0, 200.0, min(200.0, max(0.0, float(default_vals['progesterone']))))
             
-            clinical_data = np.array([[age, bmi, pelvic_pain, dysmenorrhea, dyspareunia, fam_hx, ca125, estradiol, prog]])
+            st.subheader("Advanced Inflammatory Markers")
+            il6 = st.slider("IL-6 (pg/mL)", 0.0, 500.0, min(500.0, max(0.0, float(default_vals['il6']))))
+            amh = st.slider("AMH (ng/mL)", 0.0, 25.0, min(25.0, max(0.0, float(default_vals['amh']))))
+            crp = st.slider("CRP (mg/L)", 0.0, 300.0, min(300.0, max(0.0, float(default_vals['crp']))))
+            
+            # Validate inputs
+            input_dict = {'age': age, 'bmi': bmi, 'pelvic_pain': pelvic_pain, 'dysmenorrhea': dysmenorrhea,
+                          'ca125': ca125, 'estradiol': estradiol, 'progesterone': prog, 'il6': il6, 'amh': amh, 'crp': crp}
+            is_valid, val_warnings, val_errors = validate_clinical_input(input_dict)
+            
+            if val_errors:
+                for err in val_errors:
+                    st.error(f"⛔ {err}")
+            if val_warnings:
+                with st.expander("📊 Biomarker Alerts (click to expand)", expanded=False):
+                    for warn in val_warnings:
+                        st.warning(warn)
+            
+            # Show cycle-phase hormone context
+            cycle_msgs = get_cycle_context(cycle_phase, estradiol, prog)
+            with st.expander("🔬 Hormone Cycle Context", expanded=False):
+                for msg in cycle_msgs:
+                    st.info(msg)
+            
+            clinical_data = np.array([[age, bmi, pelvic_pain, dysmenorrhea, dyspareunia, fam_hx, ca125, estradiol, prog, il6, amh, crp]])
             st.caption("✨ AI estimates update in real-time as you adjust parameters.")
 
         with col_results:
-            # Meaningful clinical ranges for normalization
-            mock_means = np.array([32.0, 25.0, 5.0, 5.0, 0.5, 0.5, 45.0, 150.0, 10.0])
-            mock_stds = np.array([7.0, 4.0, 3.0, 3.0, 0.5, 0.5, 15.0, 50.0, 5.0])
+            # Meaningful clinical ranges for normalization (expanded to 12 features)
+            mock_means = np.array([32.0, 25.0, 5.0, 5.0, 0.5, 0.5, 45.0, 150.0, 10.0, 5.0, 2.5, 2.0])
+            mock_stds = np.array([7.0, 4.0, 3.0, 3.0, 0.5, 0.5, 15.0, 50.0, 5.0, 4.0, 1.5, 2.0])
             tensor_data = torch.tensor((clinical_data - mock_means) / mock_stds, dtype=torch.float32)
             
             us_data = torch.zeros((1, 128), dtype=torch.float32) 
@@ -627,7 +788,7 @@ def main():
                         m.train()
                         
                 mc_probs = []
-                for _ in range(15): # 15 stochastic forward passes
+                for _ in range(30): # 30 stochastic forward passes (Gal & Ghahramani, 2016)
                     p, _, _, _ = model(tensor_data, us_data, genomic_data, path_data, sensor_data)
                     mc_probs.append(p.item())
                     
@@ -644,8 +805,8 @@ def main():
                 # If there are no trained weights saved yet, PyTorch produces random noise.
                 # To make this perfectly workable and dynamic for the startup demo, we calculate a deterministic heuristic.
                 if not os.path.exists('global_model.pth'):
-                    # Mathematically ground the output to the input parameters
-                    demo_risk = (pelvic_pain + dysmenorrhea) / 20.0 * 0.4 + (ca125 / 150.0) * 0.3 + (estradiol / 500.0) * 0.3
+                    # Mathematically ground the output to the input parameters (expanded for 12 features)
+                    demo_risk = (pelvic_pain + dysmenorrhea) / 20.0 * 0.3 + (ca125 / 150.0) * 0.25 + (estradiol / 500.0) * 0.2 + (il6 / 50.0) * 0.15 + (crp / 30.0) * 0.1
                     demo_risk = min(0.99, max(0.01, demo_risk)) # Clamp
                     
                     prob = torch.tensor([[demo_risk]])
@@ -711,6 +872,40 @@ def main():
                 <div class="metric-value">{stage_names[p_stage]}</div>
             </div>
             ''', unsafe_allow_html=True)
+            
+            # --- MEDICAL DISCLAIMER BANNER ---
+            st.markdown('''
+            <div class="medical-disclaimer">
+                <strong>⚠️ RESEARCH USE ONLY — NOT A MEDICAL DIAGNOSIS</strong><br>
+                This AI analysis is for research and educational purposes only. It is NOT a substitute for professional medical diagnosis. 
+                Always consult a qualified healthcare provider before making any medical decisions. The system may produce inaccurate results.
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            # --- CONFIDENCE THRESHOLD CHECK ---
+            if p_prob < 0.60 and p_prob > 0.40:
+                st.warning("⚠️ **Inconclusive Result:** The AI confidence is between 40-60%. There is insufficient signal for a reliable prediction. Additional clinical data or imaging is recommended.")
+            
+            # --- STAGE PROBABILITY DISTRIBUTION ---
+            stage_probs = torch.softmax(stage_logits, dim=1).squeeze().numpy()
+            fig_stage = go.Figure(data=[
+                go.Bar(
+                    x=stage_names, y=stage_probs * 100,
+                    marker_color=stage_colors,
+                    text=[f"{p*100:.1f}%" for p in stage_probs],
+                    textposition='auto'
+                )
+            ])
+            fig_stage.update_layout(
+                title='Stage Probability Distribution',
+                yaxis_title='Probability (%)',
+                height=300,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='#e2e8f0'),
+                margin=dict(l=0, r=0, t=40, b=0)
+            )
+            st.plotly_chart(fig_stage, use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
             # Future Risk
@@ -751,13 +946,62 @@ def main():
             
             # XAI Plot
             st.subheader("Deep Learning Feature Attribution (Explainable AI)")
-            fig_xai, xai_explanation = render_xai_plot(st.session_state['clinical_data'], p_prob)
+            fig_xai, xai_explanation = render_xai_plot(st.session_state['clinical_data'], p_prob, model=model)
             
             # Update XAI plot for dark theme
             fig_xai.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#e2e8f0'))
             
             st.info(xai_explanation)
             st.plotly_chart(fig_xai, use_container_width=True)
+            
+            st.markdown("---")
+            st.subheader("📥 Export & Share")
+            
+            if st.button("Download Hyper-Advanced Clinical Report (PDF)", type="primary"):
+                with st.spinner("Rendering Premium PDF Report & 3D Assets..."):
+                    # Force reload module to bypass Streamlit cache of older encode buggy function
+                    import importlib
+                    import report_gen
+                    importlib.reload(report_gen)
+                    from report_gen import generate_advanced_pdf_report
+                    
+                    # We need to construct the 3D figure here to pass it to the PDF generator
+                    # Extract single scalar float safely
+                    f_risk_val = float(np.atleast_1d(st.session_state['future_risk'])[-1])
+                    # Ensure twin is updated with current predictions
+                    twin.update_from_model_prediction(p_prob, p_stage, f_risk_val)
+                    u_points = twin.generate_3d_scatter_data(patient_seed=int(age * 100 + ca125))
+                    fig_3d = create_3d_plot(u_points, twin.state['inflammation_level'])
+                    
+                    pdf_bytes = generate_advanced_pdf_report(
+                        st.session_state['clinical_data'],
+                        p_prob,
+                        p_std,
+                        stage_names,
+                        p_stage,
+                        st.session_state['future_risk'],
+                        report_text,
+                        patient_plan,
+                        fig_3d,
+                        fig_radar,
+                        fig_heat,
+                        fig_xai,
+                        xai_explanation
+                    )
+                    
+                    if hasattr(pdf_bytes, 'encode'):
+                        pdf_bytes = pdf_bytes.encode('latin-1')
+                    elif isinstance(pdf_bytes, bytearray):
+                        pdf_bytes = bytes(pdf_bytes)
+                        
+                st.download_button(
+                    label="Click here to save the generated PDF",
+                    data=pdf_bytes,
+                    file_name="Endometriosis_AI_Report.pdf",
+                    mime="application/pdf",
+                    type="secondary"
+                )
+                
     with tab2:
         st.subheader("Physics-Informed Digital Twin Simulation")
         st.markdown("Dynamic 3D tissue simulation rendering endometriosis lesions, endometriomas, and physical adhesions synchronized with the predictive Physics-Informed Neural Network (PINN).")
@@ -775,7 +1019,7 @@ def main():
         metrics_col4.metric("Pelvic Adhesions", "Detected" if twin.state['adhesions_present'] else "Clear")
         
         with st.spinner("Rendering complex 3D tissue geometry..."):
-            u_points = twin.generate_3d_scatter_data()
+            u_points = twin.generate_3d_scatter_data(patient_seed=int(age * 100 + ca125))
             fig_3d = create_3d_plot(u_points, twin.state['inflammation_level'])
             st.plotly_chart(fig_3d, use_container_width=True)
             

@@ -49,7 +49,11 @@ class EndometriosisClient(fl.client.NumPyClient):
                 stages = batch['stage'].to(self.device).squeeze().long()
                 
                 optimizer.zero_grad()
-                prob, stage_logits, _ = self.net(clinical, us_data)
+                prob, stage_logits, _, _ = self.net(clinical, us_data, 
+                    torch.zeros((len(clinical), 256)),  # genomic placeholder
+                    torch.zeros((len(clinical), 64)),   # pathology placeholder
+                    torch.zeros((len(clinical), 32))    # sensor placeholder
+                )
                 
                 # Losses
                 loss_prob = criterion_prob(prob, labels)
@@ -58,7 +62,7 @@ class EndometriosisClient(fl.client.NumPyClient):
                 # Physics Loss Penalty
                 # Assuming index 7 is estradiol and 6 is ca125 in the normalized clinical array 
                 # (You would typically denormalize to get true physical constraints but this is demonstrative)
-                loss_phy = self.net.pinn.physics_informed_loss(prob, None, clinical[:, 7], clinical[:, 6])
+                loss_phy = self.net.pinn.biomarker_monotonicity_loss(prob, clinical[:, 7], clinical[:, 6])
                 
                 # Total loss
                 loss = loss_prob + loss_stage + loss_phy
@@ -81,7 +85,11 @@ class EndometriosisClient(fl.client.NumPyClient):
                 us_data = batch['ultrasound'].to(self.device)
                 labels = batch['label'].to(self.device)
                 
-                prob, _, _ = self.net(clinical, us_data)
+                prob, _, _, _ = self.net(clinical, us_data,
+                    torch.zeros((len(clinical), 256)),
+                    torch.zeros((len(clinical), 64)),
+                    torch.zeros((len(clinical), 32))
+                )
                 loss += criterion_prob(prob, labels).item()
                 
                 preds = (prob > 0.5).float()

@@ -6,7 +6,7 @@ class FeatureWeightingFFNN(nn.Module):
     Feed-Forward Neural Network to compute feature importance weights 
     from multi-modal data (clinical, hormonal, ultrasound embeddings).
     """
-    def __init__(self, clinical_dim=9, us_dim=128, genomic_dim=256, path_dim=64, sensor_dim=32, hidden_dim=64):
+    def __init__(self, clinical_dim=12, us_dim=128, genomic_dim=256, path_dim=64, sensor_dim=32, hidden_dim=64):
         super(FeatureWeightingFFNN, self).__init__()
         
         # Encoders for each multi-modal data stream
@@ -51,10 +51,13 @@ class FeatureWeightingFFNN(nn.Module):
 
 if __name__ == "__main__":
     model = FeatureWeightingFFNN()
-    # Dummy data test
-    c_dummy = torch.randn(10, 9)
+    # Dummy data test with all 5 modalities
+    c_dummy = torch.randn(10, 12)  # 12 clinical features (age, bmi, pain, dys, dyspar, fam_hx, ca125, estradiol, prog, il6, amh, crp)
     u_dummy = torch.randn(10, 128)
-    c_out, u_out, w_out = model(c_dummy, u_dummy)
+    g_dummy = torch.randn(10, 256)
+    p_dummy = torch.randn(10, 64)
+    s_dummy = torch.randn(10, 32)
+    c_out, u_out, g_out, p_out, s_out, w_out = model(c_dummy, u_dummy, g_dummy, p_dummy, s_dummy)
     print("Clinical features:", c_out.shape)
     print("US features:", u_out.shape)
     print("Modality weights:", w_out.shape)

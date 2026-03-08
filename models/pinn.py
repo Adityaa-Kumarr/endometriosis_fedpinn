@@ -113,26 +113,36 @@ class EndometriosisPINN(nn.Module):
         
         return prob, stage_logits, future_risk, gate_probs
 
-    def physics_informed_loss(self, prob_pred, time_t, estradiol, ca125):
+    def biomarker_monotonicity_loss(self, prob_pred, estradiol, ca125, il6=None, crp=None):
         """
-        Calculates a physics-informed loss penalty.
-        Endometriosis progression is often modeled as estrogen-dependent and
-        correlates with inflammatory markers like CA-125.
+        Biomarker Monotonicity Regularization Loss.
         
-        Constraint: d(Progression)/dt ~ alpha * Estradiol + beta * CA125
-        Since we have static data, we simulate this constraint as a regularization term
-        where predicted probability should monotonically align with high biological markers.
+        NOTE: This is NOT a physics-informed differential equation constraint.
+        It is a soft monotonicity regularizer that encourages the model to
+        produce higher risk predictions when inflammatory and hormonal
+        biomarkers are elevated, consistent with clinical evidence:
+        - Estrogen-dependency of endometriosis (Bulun, 2009)
+        - CA-125 correlation with disease severity (Mol et al., 1998)
+        - IL-6 elevation in peritoneal fluid (Harada et al., 2001)
+        - CRP as systemic inflammation proxy
+        
+        Constraint: High biomarkers → predicted probability should be > 0.5
         """
-        # A simple proxy differential constraint: 
-        # higher estrogen & CA125 should strongly push the probability > 0.5
-        expected_trend = (estradiol / 400.0) + (ca125 / 100.0) # Normalized proxy
+        # Normalized proxy for expected disease activity
+        expected_trend = (estradiol / 400.0) + (ca125 / 100.0)
+        
+        # Add IL-6 and CRP contributions if available
+        if il6 is not None:
+            expected_trend = expected_trend + (il6 / 50.0)
+        if crp is not None:
+            expected_trend = expected_trend + (crp / 30.0)
         
         # Penalty if high markers don't result in high probability prediction
-        penalty = torch.relu(0.8 * expected_trend - prob_pred.squeeze()) 
+        penalty = torch.relu(0.6 * expected_trend - prob_pred.squeeze()) 
         return torch.mean(penalty ** 2)
 
 class FullFedPINNModel(nn.Module):
-    def __init__(self, ffnn_model=None, pinn_model=None, clinical_dim=9, us_dim=128, genomic_dim=256, path_dim=64, sensor_dim=32):
+    def __init__(self, ffnn_model=None, pinn_model=None, clinical_dim=12, us_dim=128, genomic_dim=256, path_dim=64, sensor_dim=32):
         super(FullFedPINNModel, self).__init__()
         from models.ffnn_weighting import FeatureWeightingFFNN
         self.ffnn = ffnn_model if ffnn_model else FeatureWeightingFFNN(clinical_dim, us_dim, genomic_dim, path_dim, sensor_dim)
