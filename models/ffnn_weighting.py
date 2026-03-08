@@ -51,10 +51,13 @@ class FeatureWeightingFFNN(nn.Module):
 
 if __name__ == "__main__":
     model = FeatureWeightingFFNN()
-    # Dummy data test
+    # Dummy data test (all 5 modalities)
     c_dummy = torch.randn(10, 9)
     u_dummy = torch.randn(10, 128)
-    c_out, u_out, w_out = model(c_dummy, u_dummy)
+    g_dummy = torch.randn(10, 256)
+    p_dummy = torch.randn(10, 64)
+    s_dummy = torch.randn(10, 32)
+    c_out, u_out, g_out, p_out, s_out, w_out = model(c_dummy, u_dummy, g_dummy, p_dummy, s_dummy)
     print("Clinical features:", c_out.shape)
     print("US features:", u_out.shape)
     print("Modality weights:", w_out.shape)

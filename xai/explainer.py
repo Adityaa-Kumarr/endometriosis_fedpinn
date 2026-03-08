@@ -16,26 +16,27 @@ class EndometriosisExplainer:
     def _model_wrapper(self, clinical_data):
         """
         Wrapper function for SHAP that takes numpy clinical data,
-        adds dummy US embeddings (since we mainly want to explain clinical/hormonal data),
+        adds dummy embeddings for other modalities (we mainly explain clinical/hormonal),
         and returns the model probabilities.
         """
         self.model.eval()
         tensor_data = torch.tensor(clinical_data, dtype=torch.float32)
-        # Create dummy US embedding (mean 0)
-        us_data = torch.zeros((tensor_data.shape[0], 128), dtype=torch.float32)
-        
+        n = tensor_data.shape[0]
+        us_data = torch.zeros((n, 128), dtype=torch.float32)
+        genomic_data = torch.zeros((n, 256), dtype=torch.float32)
+        path_data = torch.zeros((n, 64), dtype=torch.float32)
+        sensor_data = torch.zeros((n, 32), dtype=torch.float32)
         with torch.no_grad():
-            prob, _, _ = self.model(tensor_data, us_data)
-        
+            prob, _, _, _ = self.model(tensor_data, us_data, genomic_data, path_data, sensor_data)
         return prob.numpy()
     
-    def explain_instance(self, background_data, instance_data):
+    def explain_instance(self, background_data, instance_data, nsamples=100):
         """
         Generates SHAP values for a given instance using a background dataset.
         """
         # We use KernelExplainer for agnostic models
         explainer = shap.KernelExplainer(self._model_wrapper, background_data)
-        shap_values = explainer.shap_values(instance_data, nsamples=100)
+        shap_values = explainer.shap_values(instance_data, nsamples=nsamples)
         
         return explainer, shap_values
 

@@ -1,0 +1,192 @@
+{
+  "root": "h:\\Akash\\DT\\Trnning dataset raw datset\\datasets\\medical imaging\\Dataset-3\\EndoTect\\test dataset",
+  "folders": {
+    "annotated_images": {
+      "file_extensions": {
+        ".jpg": 200
+      },
+      "total_files": 200,
+      "samples": {
+        ".jpg": [
+          {
+            "file": "003ab8b5-cf6d-442a-849d-80ddf0d1edaf.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 100561
+          },
+          {
+            "file": "003f46f1-e447-486a-aeb7-6bf8b45a2184.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 141685
+          },
+          {
+            "file": "00be7d4a-d643-4075-9ea3-e5bff2cd9a5c.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 94342
+          },
+          {
+            "file": "00c7089c-caf9-4c1b-850f-bedbb11668fc.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 140401
+          },
+          {
+            "file": "01deb8d0-4bc5-4092-9a76-9f5c2f74f0df.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 96567
+          }
+        ]
+      }
+    },
+    "bbox": {
+      "file_extensions": {
+        ".csv": 210
+      },
+      "total_files": 210,
+      "samples": {
+        ".csv": [
+          {
+            "file": "003ab8b5-cf6d-442a-849d-80ddf0d1edaf.csv",
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,446,281,623,508"
+            ],
+            "data_type": "tabular (bbox/labels)"
+          },
+          {
+            "file": "003f46f1-e447-486a-aeb7-6bf8b45a2184.csv",
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,123,130,526,554"
+            ],
+            "data_type": "tabular (bbox/labels)"
+          },
+          {
+            "file": "00be7d4a-d643-4075-9ea3-e5bff2cd9a5c.csv",
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,237,114,585,463"
+            ],
+            "data_type": "tabular (bbox/labels)"
+          },
+          {
+            "file": "00c7089c-caf9-4c1b-850f-bedbb11668fc.csv",
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,181,207,424,396"
+            ],
+            "data_type": "tabular (bbox/labels)"
+          },
+          {
+            "file": "01deb8d0-4bc5-4092-9a76-9f5c2f74f0df.csv",
+            "header": "class_name,xmin,ymin,xmax,ymax",
+            "row_sample": [
+              "polyp,123,226,341,539"
+            ],
+            "data_type": "tabular (bbox/labels)"
+          }
+        ]
+      }
+    },
+    "images": {
+      "file_extensions": {
+        ".jpg": 200
+      },
+      "total_files": 200,
+      "samples": {
+        ".jpg": [
+          {
+            "file": "003ab8b5-cf6d-442a-849d-80ddf0d1edaf.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 105062
+          },
+          {
+            "file": "003f46f1-e447-486a-aeb7-6bf8b45a2184.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 151789
+          },
+          {
+            "file": "00be7d4a-d643-4075-9ea3-e5bff2cd9a5c.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 95191
+          },
+          {
+            "file": "00c7089c-caf9-4c1b-850f-bedbb11668fc.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 147696
+          },
+          {
+            "file": "01deb8d0-4bc5-4092-9a76-9f5c2f74f0df.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 101279
+          }
+        ]
+      }
+    },
+    "masks": {
+      "file_extensions": {
+        ".jpg": 200
+      },
+      "total_files": 200,
+      "samples": {
+        ".jpg": [
+          {
+            "file": "003ab8b5-cf6d-442a-849d-80ddf0d1edaf.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 10266
+          },
+          {
+            "file": "003f46f1-e447-486a-aeb7-6bf8b45a2184.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 15681
+          },
+          {
+            "file": "00be7d4a-d643-4075-9ea3-e5bff2cd9a5c.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 13927
+          },
+          {
+            "file": "00c7089c-caf9-4c1b-850f-bedbb11668fc.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 10710
+          },
+          {
+            "file": "01deb8d0-4bc5-4092-9a76-9f5c2f74f0df.jpg",
+            "data_type": "image (PIL-readable)",
+            "size": 11923
+          }
+        ]
+      }
+    }
+  },
+  "summary": {
+    "annotated_images": [
+      "Images: JPG/PNG (PIL-readable)"
+    ],
+    "bbox": [
+      "CSV: object-detection bbox (class_name,xmin,ymin,xmax,ymax) or tabular"
+    ],
+    "images": [
+      "Images: JPG/PNG (PIL-readable)"
+    ],
+    "masks": [
+      "Images: JPG/PNG (PIL-readable)"
+    ]
+  },
+  "system_understands": {
+    "annotated_images": [
+      "images: app vision encoder can load these; training needs embedding pipeline (e.g. run encoder -> us_embeddings.npy)"
+    ],
+    "bbox": [
+      "bbox CSV: not clinical columns; use for detection/segmentation training, not FedPINN clinical stream"
+    ],
+    "images": [
+      "images: app vision encoder can load these; training needs embedding pipeline (e.g. run encoder -> us_embeddings.npy)"
+    ],
+    "masks": [
+      "images: app vision encoder can load these; training needs embedding pipeline (e.g. run encoder -> us_embeddings.npy)"
+    ]
+  },
+  "recommendations": [
+    "EndoTect-style layout: images + bbox CSVs. To train: (1) Run image encoder on images -> 128-d embeddings; (2) Pair with clinical CSV per patient OR use bbox for detection loss; (3) FedPINN expects client folders with clinical.csv + us_embeddings.npy.",
+    "Our app can use these images for prediction (upload -> vision encoder -> 128-d). For federated training, add a pipeline: images folder -> encoder -> us_embeddings.npy per sample."
+  ]
+}

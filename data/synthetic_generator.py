@@ -88,4 +88,6 @@ def generate_synthetic_data(num_samples=1000, num_nodes=5, output_dir="dataset")
         print(f"Client {i+1} got {len(idx)} multi-modal samples.")
 
 if __name__ == "__main__":
-    generate_synthetic_data(num_samples=2500, num_nodes=5, output_dir="../endometriosis_fedpinn/dataset")
+    _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _dataset_dir = os.path.join(_root, "dataset")
+    generate_synthetic_data(num_samples=2500, num_nodes=5, output_dir=_dataset_dir)

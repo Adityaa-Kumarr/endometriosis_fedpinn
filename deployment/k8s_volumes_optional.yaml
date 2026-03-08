@@ -1,0 +1,40 @@
+# Optional: PersistentVolumes for server (save model) and per-client data
+# Use when dataset is NOT baked into image — each pod mounts its own PVC with client_N data.
+# For AWS: use EBS (ReadWriteOnce) per client or EFS (ReadWriteMany) shared.
+---
+# Example: server saves global model to a volume (if you add save logic in server)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fedpinn-server-model
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  # storageClassName: gp2   # AWS EBS; set in EKS
+---
+# Example: one PVC per client when each pod gets its dataset from storage
+# Populate each volume with only that client's folder (e.g. client_1/ with clinical.csv + .npy files)
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: fedpinn-data-client-1
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 500Mi
+# ---
+# (Repeat for client-2 ... client-5)
+# Then in Deployment fedpinn-client-1 add:
+#   volumeMounts:
+#   - name: client-data
+#     mountPath: /data/clients
+#   volumes:
+#   - name: client-data
+#     persistentVolumeClaim:
+#       claimName: fedpinn-data-client-1
+# And set env DATA_DIR=/data/clients

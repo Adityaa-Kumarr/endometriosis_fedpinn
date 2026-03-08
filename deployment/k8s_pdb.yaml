@@ -1,0 +1,34 @@
+# PodDisruptionBudgets for AWS EC2 / Kubernetes deployment
+# Ensures voluntary disruptions (node drain, cluster autoscaler) don't take down
+# too many pods at once so FL rounds can still complete.
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fedpinn-server-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: fedpinn-server
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fedpinn-clients-pdb
+spec:
+  # Server strategy requires min_available_clients=2; keep at least 2 clients during disruption
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: fedpinn-client
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fedpinn-dashboard-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: fedpinn-dashboard

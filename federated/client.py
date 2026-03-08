@@ -35,11 +35,14 @@ class EndometriosisClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        
+        # FedProx: keep reference to global params for proximal term (mu/2) * ||w - w_global||^2
+        global_params = [p.detach().clone() for p in self.net.parameters()]
+
         criterion_prob = nn.BCELoss()
         criterion_stage = nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.net.parameters(), lr=LR)
-        
+        proximal_mu = float(config.get("proximal_mu", config.get("proximal-mu", 0.0)))
+
         self.net.train()
         for epoch in range(LOCAL_EPOCHS):
             for batch in self.train_loader:
@@ -47,24 +50,28 @@ class EndometriosisClient(fl.client.NumPyClient):
                 us_data = batch['ultrasound'].to(self.device)
                 labels = batch['label'].to(self.device)
                 stages = batch['stage'].to(self.device).squeeze().long()
-                
+                batch_size = clinical.shape[0]
+                genomic = batch.get('genomic', torch.zeros((batch_size, 256))).to(self.device)
+                pathology = batch.get('pathology', torch.zeros((batch_size, 64))).to(self.device)
+                sensor = batch.get('sensor', torch.zeros((batch_size, 32))).to(self.device)
                 optimizer.zero_grad()
-                prob, stage_logits, _ = self.net(clinical, us_data)
-                
-                # Losses
+                prob, stage_logits, _, _ = self.net(clinical, us_data, genomic, pathology, sensor)
+
                 loss_prob = criterion_prob(prob, labels)
                 loss_stage = criterion_stage(stage_logits, stages)
-                
-                # Physics Loss Penalty
-                # Assuming index 7 is estradiol and 6 is ca125 in the normalized clinical array 
-                # (You would typically denormalize to get true physical constraints but this is demonstrative)
                 loss_phy = self.net.pinn.physics_informed_loss(prob, None, clinical[:, 7], clinical[:, 6])
-                
-                # Total loss
                 loss = loss_prob + loss_stage + loss_phy
+
+                # FedProx proximal term: (mu/2) * ||w - w_global||^2
+                if proximal_mu > 0:
+                    prox_term = torch.tensor(0.0, device=self.device)
+                    for p, p_glob in zip(self.net.parameters(), global_params):
+                        prox_term = prox_term + (p - p_glob.to(self.device)).pow(2).sum()
+                    loss = loss + (proximal_mu / 2.0) * prox_term
+
                 loss.backward()
                 optimizer.step()
-                
+
         return self.get_parameters(config={}), len(self.train_loader.dataset), {}
 
     def evaluate(self, parameters, config):
@@ -80,8 +87,11 @@ class EndometriosisClient(fl.client.NumPyClient):
                 clinical = batch['clinical'].to(self.device)
                 us_data = batch['ultrasound'].to(self.device)
                 labels = batch['label'].to(self.device)
-                
-                prob, _, _ = self.net(clinical, us_data)
+                batch_size = clinical.shape[0]
+                genomic = batch.get('genomic', torch.zeros((batch_size, 256))).to(self.device)
+                pathology = batch.get('pathology', torch.zeros((batch_size, 64))).to(self.device)
+                sensor = batch.get('sensor', torch.zeros((batch_size, 32))).to(self.device)
+                prob, _, _, _ = self.net(clinical, us_data, genomic, pathology, sensor)
                 loss += criterion_prob(prob, labels).item()
                 
                 preds = (prob > 0.5).float()
@@ -98,13 +108,18 @@ def start_client(client_id):
     pinn = EndometriosisPINN()
     net = FullFedPINNModel(ffnn, pinn)
     
-    # Load Data
-    data_dir = os.path.join(os.path.dirname(__file__), "..", "dataset", "clients")
+    # Load Data: DATA_DIR can be set in K8s to mount per-pod dataset (e.g. /data/clients)
+    data_dir = os.environ.get("DATA_DIR")
+    if not data_dir:
+        data_dir = os.path.join(os.path.dirname(__file__), "..", "dataset", "clients")
     train_loader, test_loader, _ = load_client_data(client_id, batch_size=BATCH_SIZE, data_dir=data_dir)
     
-    # Start Client
+    # Server address: use FLOWER_SERVER_URL in K8s (e.g. fedpinn-service:8080), else localhost
+    server_address = os.environ.get("FLOWER_SERVER_URL", "127.0.0.1:8080")
+    print(f"Connecting to server: {server_address}")
+    
     fl.client.start_client(
-        server_address="127.0.0.1:8080",
+        server_address=server_address,
         client=EndometriosisClient(net, train_loader, test_loader).to_client(),
     )
 
