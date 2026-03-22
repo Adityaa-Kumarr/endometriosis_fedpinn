@@ -161,25 +161,80 @@ python federated/client.py 1
 
 ---
 
-## 🐳 Docker & Kubernetes Deployment
+## 🐳 Exact Kubernetes Deployment Steps
 
-If you are working on DevOps or want to package the application, you can containerize it natively.
+To deploy this project to a Kubernetes cluster (such as AWS EKS, GKE, or a local Minikube/K3s setup), follow these exact, step-by-step instructions.
 
-**Automatic deploy on AWS (ECR + EKS + apply):**
+### Step 1: Prerequisites
+Ensure you have the following installed and configured on your local machine:
+1. **Docker:** For building the container image.
+2. **kubectl:** The Kubernetes command-line tool, configured to connect to your cluster.
+3. *(Optional for AWS)* **AWS CLI & eksctl:** If you are deploying to Amazon EKS.
+
+### Step 2: Build and Push the Docker Image
+First, build the Docker image containing the Streamlit dashboard, the Flower federated learning server, and the client code.
+
 ```bash
-./deployment/scripts/deploy-aws.sh
-```
-See `deployment/scripts/README.md` for prerequisites (AWS CLI, Docker, kubectl, eksctl) and options.
-
-**1. Build the Docker Image (manual):**
-```bash
+# 1. Build the image locally
 docker build -t endo-fedpinn:latest -f deployment/Dockerfile .
+
+# 2. Tag the image for your container registry (e.g., Docker Hub or AWS ECR)
+# Replace <your-dockerhub-username> with your actual username or ECR URL
+docker tag endo-fedpinn:latest <your-dockerhub-username>/endo-fedpinn:latest
+
+# 3. Push the image to your registry
+docker push <your-dockerhub-username>/endo-fedpinn:latest
 ```
 
-**2. Deploy via Kubernetes:**
+*Note: If you are using a local cluster like Minikube, you can load the image directly without pushing to a registry using `minikube image load endo-fedpinn:latest`.*
+
+### Step 3: Configure the Deployment YAML
+Open the `deployment/k8s_deployment.yaml` file and ensure the `image:` fields under the `fedpinn-server`, `fedpinn-client-X`, and `fedpinn-dashboard` deployments point to the image you just pushed (e.g., `<your-dockerhub-username>/endo-fedpinn:latest`).
+
+### Step 4: Apply Kubernetes Manifests
+Apply the base deployment which includes the Services, the Flower Server, the 5 Federated Clients (each running in their own pod with distinct partitioned data), and the Streamlit Dashboard.
+
 ```bash
+# 1. Deploy the core architecture (Server, 5 Clients, Dashboard, Services)
 kubectl apply -f deployment/k8s_deployment.yaml
+
+# 2. Apply Pod Disruption Budgets (PDBs) to ensure high availability
 kubectl apply -f deployment/k8s_pdb.yaml
+```
+
+*(Optional)* If you want to use persistent volumes for client datasets instead of baking them into the Docker image, apply the volume manifests and edit the deployments to mount them:
+```bash
+kubectl apply -f deployment/k8s_volumes_optional.yaml
+```
+
+### Step 5: Verify the Deployment
+Check that all pods are spinning up successfully. You should see 1 server pod, 5 client pods, and 1 dashboard pod.
+
+```bash
+kubectl get pods
+
+# Check the logs of the server to ensure federated training rounds are occurring
+kubectl logs -l app=fedpinn-server -f
+
+# Check the logs of a specific client
+kubectl logs -l app=fedpinn-client,client_id=1
+```
+
+### Step 6: Access the Application
+The `fedpinn-dashboard` is exposed via a LoadBalancer service on port 8501. Retrieve the external IP address or DNS name:
+
+```bash
+kubectl get svc dashboard-service
+```
+Copy the `EXTERNAL-IP` and open it in your browser: `http://<EXTERNAL-IP>:8501`.
+
+*(If using Minikube, you can access the service via `minikube service dashboard-service`)*
+
+### 🚀 Alternative: Automated AWS Deployment
+If deploying specifically to AWS EKS, you can use the provided automated script:
+```bash
+chmod +x deployment/scripts/deploy-aws.sh
+./deployment/scripts/deploy-aws.sh
 ```
 
 ---
