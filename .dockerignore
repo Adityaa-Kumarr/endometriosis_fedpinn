@@ -21,3 +21,4 @@ agent-transcripts
 terminals
 *.log
 dataset_manifest.json
+*.tar

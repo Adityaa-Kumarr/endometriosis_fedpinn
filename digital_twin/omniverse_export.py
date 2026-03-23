@@ -1,5 +1,18 @@
 import numpy as np
 
+def _triangles_to_obj(x, y, z, i, j, k, name="Object"):
+    """Converts raveled vertices and triangle indices to OBJ format string."""
+    x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
+    i, j, k = np.asarray(i, dtype=int), np.asarray(j, dtype=int), np.asarray(k, dtype=int)
+    obj_str = f"o {name}\n"
+    for xi, yi, zi in zip(x.ravel(), y.ravel(), z.ravel()):
+        obj_str += f"v {xi:.6f} {yi:.6f} {zi:.6f}\n"
+    for ii, jj, kk in zip(i, j, k):
+        obj_str += f"f {ii+1} {jj+1} {kk+1}\n"
+    num_verts = int(np.size(x))
+    return obj_str, num_verts
+
+
 def _grid_to_obj(x, y, z, name="Object"):
     """Converts 2D numpy arrays of x, y, z coordinates (from meshgrid) to OBJ format string."""
     obj_str = f"o {name}\n"
@@ -58,9 +71,16 @@ def export_to_obj(twin_data):
         final_obj += obj_chunk + "\n"
         vertex_offset += num_verts
 
-    # Uterus
-    u_x, u_y, u_z = twin_data['uterus']
-    add_mesh(u_x, u_y, u_z, "Uterus")
+    # Uterus (triangulated mesh or grid)
+    ut = twin_data['uterus']
+    if len(ut) == 6:
+        u_x, u_y, u_z, u_i, u_j, u_k = ut
+        obj_chunk, num_verts = _triangles_to_obj(u_x, u_y, u_z, u_i, u_j, u_k, "Uterus")
+        final_obj += obj_chunk + "\n"
+        vertex_offset += num_verts
+    else:
+        u_x, u_y, u_z = ut
+        add_mesh(u_x, u_y, u_z, "Uterus")
     
     # Left Ovary
     lo_x, lo_y, lo_z = twin_data['left_ovary']
@@ -96,6 +116,7 @@ def export_lesions_to_usd_ascii(twin_data):
         return ""
         
     points_str = ", ".join([f"({x:.4f}, {y:.4f}, {z:.4f})" for x, y, z in zip(all_x, all_y, all_z)])
+    widths_str = ", ".join(["0.2"] * len(all_x))
     
     usda = f'''#usda 1.0
 (
@@ -106,7 +127,7 @@ def export_lesions_to_usd_ascii(twin_data):
 def Points "Lesions"
 {{
     point3f[] points = [{points_str}]
-    float[] widths = [0.2]
+    float[] widths = [{widths_str}]
 }}
 '''
     return usda

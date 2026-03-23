@@ -1,5 +1,7 @@
 import numpy as np
 
+from .uterus_mesh_fixed import generate_uterus_mesh as _generate_uterus_mesh_fixed
+
 
 def _hash3(x, y, z, seed=0):
     """Deterministic hash for 3D coordinates (pure NumPy, no C extensions)."""
@@ -53,12 +55,14 @@ class UterusDigitalTwin:
             'endometrioma_size_cm': 0.0
         }
         
-    def update_from_model_prediction(self, probability, stage, future_risk=None):
+    def update_from_model_prediction(self, probability, stage, future_risk=None, seed=None):
         """
         Updates the internal digital twin state based on AI predictions.
         stage classes: 0=None, 1=Minimal, 2=Mild, 3=Moderate, 4=Severe
+        seed: optional int for reproducible lesion/adhesion counts
         """
-        # Inflammation scales with probability
+        if seed is not None:
+            np.random.seed(seed)
         self.state['inflammation_level'] = min(1.0, probability * 1.5)
         
         # Base Future Progression
@@ -100,55 +104,59 @@ class UterusDigitalTwin:
             out += _pnoise3_numpy(x, y, z, scale * f, seed + o * 17) / f
         return out
 
-    def generate_3d_scatter_data(self, patient_seed=None):
+    def generate_3d_scatter_data(self, reference_shape=None, resolution=1.0, patient_seed=None):
         """
-        Generates hyper-realistic 3D mesh points representing the AI Digital Twin.
-        Uses high-resolution grids and organic noise displacement.
-        
+        Generates 3D mesh points representing the AI Digital Twin.
+        reference_shape: optional dict from reference_shape.get_reference_shape_params()
+        resolution: 1.0=full (120), 0.6=medium (72), 0.4=low (48) for faster rendering
         Args:
             patient_seed: int or None. If provided, all random operations use this
                          seed for deterministic, reproducible lesion placement.
         """
-        # Create a local RNG so we don't pollute global state
         rng = np.random.RandomState(patient_seed if patient_seed is not None else 42)
-        # High resolution grid for Uterus
-        res_u = 120
-        u = np.linspace(0, np.pi, res_u)
-        v = np.linspace(0, 2 * np.pi, res_u)
-        u_grid, v_grid = np.meshgrid(u, v)
         
-        # Base Pear-shaped uterus body
-        r_base = 3.8 + 1.6 * np.cos(u_grid)
+        if reference_shape and isinstance(reference_shape, dict):
+            a, b = reference_shape.get("a", 3.2), reference_shape.get("b", 2.2)
+            z_scale = reference_shape.get("z_scale", 1.0)
+            xy_scale = reference_shape.get("xy_scale", 1.0)
+        else:
+            a, b = 3.2, 2.2
+            z_scale = 1.0
+            xy_scale = 1.0
+        half_height = 6.5 * z_scale
+        uterus_mesh_data = _generate_uterus_mesh_fixed(
+            a=a, b=b, z_scale=z_scale, xy_scale=xy_scale,
+            inflammation_level=self.state['inflammation_level'],
+            resolution=resolution,
+            include_cavity=True,
+            include_cervical_canal=False,
+            include_fallopian_junctions=False,
+            seed=42,
+        )
+        o = uterus_mesh_data['outer']
+        x_uterus, y_uterus, z_uterus = o['x'], o['y'], o['z']
+        uterus_i, uterus_j, uterus_k = o['i'], o['j'], o['k']
+        # Endometrial cavity
+        _cav = uterus_mesh_data.get('cavity')
+        cavity_mesh = (
+            _cav['x'], _cav['y'], _cav['z'], _cav['i'], _cav['j'], _cav['k']
+        ) if _cav else None
         
-        # Apply subtle organic swelling based on inflammation
-        swell = 1.0 + (self.state['inflammation_level'] * 0.15)
-        
-        x_u_base = r_base * np.sin(u_grid) * np.cos(v_grid) * swell
-        y_u_base = r_base * np.sin(u_grid) * np.sin(v_grid) * swell
-        z_u_base = 5.5 * np.cos(u_grid) * swell
-        
-        # Add organ tissue noise (bumps and imperfections)
-        tissue_noise = self._apply_organic_noise(x_u_base, y_u_base, z_u_base, scale=0.3, seed=10) * 0.4
-        
-        # Calculate normals outward for displacement
-        norm_len = np.sqrt(x_u_base**2 + y_u_base**2 + z_u_base**2) + 1e-6
-        x_uterus = x_u_base + (x_u_base/norm_len) * tissue_noise
-        y_uterus = y_u_base + (y_u_base/norm_len) * tissue_noise
-        z_uterus = z_u_base + (z_u_base/norm_len) * tissue_noise
-        
-        # High resolution Ovaries (almond shaped with surface bumps)
-        res_o = 60
+        res_o = max(36, min(60, int(60 * resolution)))
         u_ov = np.linspace(0, np.pi, res_o)
         v_ov = np.linspace(0, 2*np.pi, res_o)
         uo_grid, vo_grid = np.meshgrid(u_ov, v_ov)
         
-        x_o_base = 1.8 * np.sin(uo_grid) * np.cos(vo_grid)
-        y_o_base = 1.2 * np.sin(uo_grid) * np.sin(vo_grid) # Flattened slightly like almond
-        z_o_base = 1.4 * np.cos(uo_grid)
+        # Ovaries: anatomically almond-shaped (~1/3 width of uterus)
+        # Assuming uterus width is ~5cm, ovary width is ~1.5cm radius
+        ov_scale = 0.85
+        x_o_base = ov_scale * np.sin(uo_grid) * np.cos(vo_grid)
+        y_o_base = 0.7 * ov_scale * np.sin(uo_grid) * np.sin(vo_grid)
+        z_o_base = 1.3 * ov_scale * np.cos(uo_grid) # Almond elongated along Z
         
-        # Ovary follicle/texture noise (more aggressive than uterus)
-        ovary_noise_l = self._apply_organic_noise(x_o_base, y_o_base, z_o_base, scale=0.8, seed=20) * 0.3
-        ovary_noise_r = self._apply_organic_noise(x_o_base, y_o_base, z_o_base, scale=0.8, seed=30) * 0.3
+        # Ovary follicle/texture noise
+        ovary_noise_l = self._apply_organic_noise(x_o_base, y_o_base, z_o_base, scale=0.8, seed=20) * 0.25
+        ovary_noise_r = self._apply_organic_noise(x_o_base, y_o_base, z_o_base, scale=0.8, seed=30) * 0.25
         
         o_norm = np.sqrt(x_o_base**2 + y_o_base**2 + z_o_base**2) + 1e-6
         xl_ov = x_o_base + (x_o_base/o_norm) * ovary_noise_l
@@ -159,10 +167,9 @@ class UterusDigitalTwin:
         yr_ov = y_o_base + (y_o_base/o_norm) * ovary_noise_r
         zr_ov = z_o_base + (z_o_base/o_norm) * ovary_noise_r
         
-        # Add Endometrioma mass to ovaries if severe
-        endo_rad = self.state['endometrioma_size_cm'] / 2.0
+        # Add Endometrioma mass to ovaries
+        endo_rad = self.state.get('endometrioma_size_cm', 0.0) / 2.0
         if endo_rad > 0:
-            # Attach cyst to one ovary randomly based on seed
             rng_seed = np.random.RandomState(42)
             cyst_x = endo_rad * np.sin(uo_grid) * np.cos(vo_grid)
             cyst_y = endo_rad * np.sin(uo_grid) * np.sin(vo_grid)
@@ -174,123 +181,140 @@ class UterusDigitalTwin:
             cyst_z += (cyst_z/c_norm) * cyst_noise
             
             # Offset cyst to edge of left ovary
-            cyst_x -= 1.0
-            cyst_z += 1.0
+            cyst_x -= (ov_scale * 0.8)
+            cyst_z += (ov_scale * 0.5)
             
-            # Merge cyst into left ovary by displacing ovary vertices near the cyst
+            # Merge cyst into left ovary
             for i in range(res_o):
                 for j in range(res_o):
-                    # Distance from ovary vertex to cyst center
-                    dx = xl_ov[i,j] - (-1.0)
+                    dx = xl_ov[i,j] - (-ov_scale * 0.8)
                     dy = yl_ov[i,j] - 0.0
-                    dz = zl_ov[i,j] - 1.0
+                    dz = zl_ov[i,j] - (ov_scale * 0.5)
                     dist = np.sqrt(dx**2 + dy**2 + dz**2)
                     if dist < endo_rad * 1.3:
-                        # Push ovary surface outward where cyst overlaps
                         blend = max(0, 1.0 - dist / (endo_rad * 1.3))
                         xl_ov[i,j] += dx * blend * 0.3
                         yl_ov[i,j] += dy * blend * 0.3
                         zl_ov[i,j] += dz * blend * 0.3
         
-        left_ovary = (xl_ov - 6.5, yl_ov, zl_ov + 2.5)
-        right_ovary = (xr_ov + 6.5, yr_ov, zr_ov + 2.5)
+        # Height of uterus is 8.0 * z_scale. z=0.88 is cornua.
+        height_u = 8.0 * z_scale
+        R_max = 2.5 * xy_scale
+        R_min = 0.6 * xy_scale
+        z_cor = 0.88
+        r_cor = R_max * (z_cor**1.5) + R_min
         
-        # Fallopian Tubes (Higher res parametric organic tubes)
-        t = np.linspace(0, 1, 80)
-        theta_tube = np.linspace(0, 2*np.pi, 30)
+        x_cornu_r = r_cor * 0.8  # flatten factor
+        x_cornu_l = -x_cornu_r
+        z_cornu = height_u * z_cor
+        y_cornu = 0.0
+
+        # Ovary positions: Lateral + slightly posterior
+        ov_center_x = x_cornu_r + 2.5
+        ov_center_y = -1.2 # Posterior
+        ov_center_z = z_cornu - 1.5
+
+        left_ovary = (xl_ov - ov_center_x, yl_ov + ov_center_y, zl_ov + ov_center_z)
+        right_ovary = (xr_ov + ov_center_x, yr_ov + ov_center_y, zr_ov + ov_center_z)
+        
+        nt, ntheta = max(40, int(80 * resolution)), max(18, int(30 * resolution))
+        t = np.linspace(0, 1, nt)
+        theta_tube = np.linspace(0, 2*np.pi, ntheta)
         t_grid, theta_grid = np.meshgrid(t, theta_tube)
         
-        # Left tube curve with more organic meandering
-        meander_l = np.sin(t_grid * np.pi * 3) * 0.4
-        curve_x_l = -2.5 - 4.0 * t_grid
-        curve_y_l = 1.0 * np.sin(np.pi * t_grid) + meander_l
-        curve_z_l = 4.5 - 2.0 * t_grid + 0.8 * np.sin(np.pi * t_grid) 
+        # Fallopian tube mathematically: x = r*cos(t), y=r*sin(t), z=height+0.5*sin(t) from prompt
+        # We parameterize t from 0 to 1 moving laterally from uterus to ovary
+        # Left tube
+        arch_l = np.sin(np.pi * t_grid)
+        curve_x_l = x_cornu_l + (-ov_center_x - x_cornu_l) * t_grid
+        curve_y_l = y_cornu + (ov_center_y - y_cornu) * t_grid
+        curve_z_l = z_cornu + 0.8 * arch_l * (1.0 - t_grid*0.5) # 20-30 degree upward tilt arch
         
-        # Fimbriae (flares at the end near ovary)
-        flare = np.where(t_grid > 0.85, 1.0 + (t_grid-0.85)*8, 1.0)
-        radius_tube_l = (0.35 - 0.15 * t_grid) * flare
+        fimbria_l = np.where(t_grid > 0.85, 0.4 * np.sin(8 * theta_grid) * np.sin(np.pi * (t_grid - 0.85) / 0.15), 0.0)
+        flare = np.where(t_grid > 0.85, 1.0 + (t_grid - 0.85) * 4.0, 1.0)
+        radius_tube_l = (0.22 - 0.08 * t_grid) * flare + fimbria_l
+        radius_tube_l = np.maximum(radius_tube_l, 0.05)
         
+        # Add slight wobble
         x_tube_l = curve_x_l + radius_tube_l * np.cos(theta_grid)
         y_tube_l = curve_y_l + radius_tube_l * np.sin(theta_grid)
         z_tube_l = curve_z_l + radius_tube_l * np.sin(theta_grid) * 0.5
-        
-        tube_noise_l = self._apply_organic_noise(x_tube_l, y_tube_l, z_tube_l, scale=1.2, seed=60) * 0.1
+        tube_noise_l = self._apply_organic_noise(x_tube_l, y_tube_l, z_tube_l, scale=1.5, seed=60) * 0.05
         left_tube = (x_tube_l + tube_noise_l, y_tube_l + tube_noise_l, z_tube_l + tube_noise_l)
         
-        # Right tube organic curve
-        meander_r = np.sin(t_grid * np.pi * 2.5) * 0.4
-        curve_x_r = 2.5 + 4.0 * t_grid
-        curve_y_r = 1.0 * np.sin(np.pi * t_grid) - meander_r
-        curve_z_r = 4.5 - 2.0 * t_grid + 0.6 * np.sin(np.pi * t_grid)
+        # Right tube
+        arch_r = np.sin(np.pi * t_grid)
+        curve_x_r = x_cornu_r + (ov_center_x - x_cornu_r) * t_grid
+        curve_y_r = y_cornu + (ov_center_y - y_cornu) * t_grid
+        curve_z_r = z_cornu + 0.8 * arch_r * (1.0 - t_grid*0.5)
         
-        radius_tube_r = (0.35 - 0.15 * t_grid) * flare
+        fimbria_r = np.where(t_grid > 0.85, 0.4 * np.sin(8 * theta_grid + 0.5) * np.sin(np.pi * (t_grid - 0.85) / 0.15), 0.0)
+        radius_tube_r = (0.22 - 0.08 * t_grid) * flare + fimbria_r
+        radius_tube_r = np.maximum(radius_tube_r, 0.05)
+        
         x_tube_r = curve_x_r + radius_tube_r * np.cos(theta_grid)
         y_tube_r = curve_y_r + radius_tube_r * np.sin(theta_grid)
         z_tube_r = curve_z_r + radius_tube_r * np.sin(theta_grid) * 0.5
-        
-        tube_noise_r = self._apply_organic_noise(x_tube_r, y_tube_r, z_tube_r, scale=1.2, seed=70) * 0.1
+        tube_noise_r = self._apply_organic_noise(x_tube_r, y_tube_r, z_tube_r, scale=1.5, seed=70) * 0.05
         right_tube = (x_tube_r + tube_noise_r, y_tube_r + tube_noise_r, z_tube_r + tube_noise_r)
         
-        # Realistic Lesion distribution (clustered, not purely random)
+        # Lesion placement mathematically fixed for the new boundaries
         lesion_x, lesion_y, lesion_z = [], [], []
-        lesion_colors = []
-        lesion_sizes = []
+        lesion_colors, lesion_sizes = [], []
         
-        # Adding the endometrioma visual as a massive lesion cluster
         if endo_rad > 0:
             for _ in range(int(endo_rad * 30)):
                 th = np.random.uniform(0, np.pi)
                 ph = np.random.uniform(0, 2*np.pi)
                 rad = endo_rad * np.random.uniform(0.8, 1.0)
-                lesion_x.append(rad * np.sin(th) * np.cos(ph) - 7.5) # Attached left ovary
-                lesion_y.append(rad * np.sin(th) * np.sin(ph))
-                lesion_z.append(rad * np.cos(th) + 3.5)
-                lesion_colors.append(0.3) # Dark old blood color "chocolate cyst"
+                lesion_x.append(rad * np.sin(th) * np.cos(ph) - ov_center_x)
+                lesion_y.append(rad * np.sin(th) * np.sin(ph) + ov_center_y)
+                lesion_z.append(rad * np.cos(th) + ov_center_z)
+                lesion_colors.append(0.3)
                 lesion_sizes.append(np.random.uniform(10, 20))
-        
-        # Regular lesions
-        for _ in range(self.state['lesion_count']):
-            # Cluster centers
+                
+        n_lesions = self.state.get('lesion_count', 0)
+        for _ in range(n_lesions):
             target = rng.choice(['ut_pouch', 'ut_front', 'left_ovary', 'right_ovary', 'tubes'], p=[0.4, 0.2, 0.15, 0.15, 0.1])
-            if target == 'ut_pouch': # Pouch of Douglas (common area)
-                th = np.random.uniform(np.pi/2, np.pi)
-                ph = np.random.uniform(-np.pi/4, np.pi/4) + np.pi
-                rad = (3.8 + 1.6 * np.cos(th)) * 1.05
-                lesion_x.append(rad * np.sin(th) * np.cos(ph))
-                lesion_y.append(rad * np.sin(th) * np.sin(ph))
-                lesion_z.append(5.5 * np.cos(th))
+            if target == 'ut_pouch':
+                z_n = np.random.uniform(0.2, 0.8)
+                ph = np.random.uniform(np.pi*0.75, np.pi*1.25)
+                rad = (R_max * (z_n**1.5) + R_min) * 1.05
+                lesion_x.append(rad * np.cos(ph) * 0.8)
+                lesion_y.append(rad * np.sin(ph))
+                lesion_z.append(height_u * z_n)
             elif target == 'ut_front':
-                th = np.random.uniform(0, np.pi/2)
-                ph = np.random.uniform(-np.pi/4, np.pi/4)
-                rad = (3.8 + 1.6 * np.cos(th)) * 1.05
-                lesion_x.append(rad * np.sin(th) * np.cos(ph))
-                lesion_y.append(rad * np.sin(th) * np.sin(ph))
-                lesion_z.append(5.5 * np.cos(th))
+                z_n = np.random.uniform(0.4, 0.9)
+                ph = np.random.uniform(-np.pi*0.25, np.pi*0.25)
+                rad = (R_max * (z_n**1.5) + R_min) * 1.05
+                lesion_x.append(rad * np.cos(ph) * 0.8)
+                lesion_y.append(rad * np.sin(ph))
+                lesion_z.append(height_u * z_n)
             elif target == 'left_ovary':
                 th = np.random.uniform(0, np.pi)
                 ph = np.random.uniform(0, 2*np.pi)
-                lesion_x.append(1.9 * np.sin(th) * np.cos(ph) - 6.5)
-                lesion_y.append(1.9 * np.sin(th) * np.sin(ph))
-                lesion_z.append(1.9 * np.cos(th) + 2.5)
+                lesion_x.append(1.0 * np.sin(th) * np.cos(ph) - ov_center_x)
+                lesion_y.append(1.0 * np.sin(th) * np.sin(ph) + ov_center_y)
+                lesion_z.append(1.0 * np.cos(th) + ov_center_z)
             elif target == 'right_ovary':
                 th = np.random.uniform(0, np.pi)
                 ph = np.random.uniform(0, 2*np.pi)
-                lesion_x.append(1.9 * np.sin(th) * np.cos(ph) + 6.5)
-                lesion_y.append(1.9 * np.sin(th) * np.sin(ph))
-                lesion_z.append(1.9 * np.cos(th) + 2.5)
-            else: # Tubes
+                lesion_x.append(1.0 * np.sin(th) * np.cos(ph) + ov_center_x)
+                lesion_y.append(1.0 * np.sin(th) * np.sin(ph) + ov_center_y)
+                lesion_z.append(1.0 * np.cos(th) + ov_center_z)
+            else:
                 side = np.random.choice([-1, 1])
                 t_val = np.random.uniform(0.1, 0.9)
                 th_val = np.random.uniform(0, 2*np.pi)
-                cx = side * (2.5 + 4.0 * t_val)
-                cy = 1.0 * np.sin(np.pi * t_val)
-                cz = 4.5 - 2.0 * t_val + 0.5 * np.sin(np.pi * t_val)
-                r_val = 0.35 - 0.15 * t_val
-                lesion_x.append(cx + r_val * np.cos(th_val) * 1.3)
-                lesion_y.append(cy + r_val * np.sin(th_val) * 1.3)
+                cx = x_cornu_l * (1 - t_val) + (-ov_center_x) * t_val if side < 0 else x_cornu_r * (1 - t_val) + ov_center_x * t_val
+                cy = y_cornu + (ov_center_y - y_cornu) * t_val
+                cz = z_cornu + 0.8 * np.sin(np.pi * t_val) * (1.0 - t_val*0.5)
+                r_val = 0.25 - 0.1 * t_val
+                lesion_x.append(cx + r_val * np.cos(th_val) * 1.2)
+                lesion_y.append(cy + r_val * np.sin(th_val) * 1.2)
                 lesion_z.append(cz)
                 
-            lesion_colors.append(np.random.uniform(0.6, 1.0)) # Active bright red lesions
+            lesion_colors.append(np.random.uniform(0.6, 1.0))
             lesion_sizes.append(np.random.uniform(6, 12))
             
         # ---------------------------------------------
@@ -313,77 +337,81 @@ class UterusDigitalTwin:
             elif target == 'ut_pouch':
                 th = np.random.uniform(np.pi/2, np.pi)
                 ph = np.random.uniform(-np.pi/4, np.pi/4) + np.pi
-                rad = (3.8 + 1.6 * np.cos(th)) * 1.15
+                rad = (a + b * np.cos(th)) * 1.15 * xy_scale
                 f_lesion_x.append(rad * np.sin(th) * np.cos(ph))
                 f_lesion_y.append(rad * np.sin(th) * np.sin(ph))
-                f_lesion_z.append(5.5 * np.cos(th))
+                f_lesion_z.append(half_height * np.cos(th))
             elif target == 'ut_front':
                 th = np.random.uniform(0, np.pi/2)
                 ph = np.random.uniform(-np.pi/4, np.pi/4)
-                rad = (3.8 + 1.6 * np.cos(th)) * 1.15
+                rad = (a + b * np.cos(th)) * 1.15 * xy_scale
                 f_lesion_x.append(rad * np.sin(th) * np.cos(ph))
                 f_lesion_y.append(rad * np.sin(th) * np.sin(ph))
-                f_lesion_z.append(5.5 * np.cos(th))
+                f_lesion_z.append(half_height * np.cos(th))
             elif target == 'left_ovary':
                 th = np.random.uniform(0, np.pi)
                 ph = np.random.uniform(0, 2*np.pi)
-                f_lesion_x.append(2.5 * np.sin(th) * np.cos(ph) - 6.5)
-                f_lesion_y.append(2.5 * np.sin(th) * np.sin(ph))
-                f_lesion_z.append(2.5 * np.cos(th) + 2.5)
+                f_lesion_x.append(1.2 * np.sin(th) * np.cos(ph) - ov_center_x)
+                f_lesion_y.append(1.2 * np.sin(th) * np.sin(ph))
+                f_lesion_z.append(1.2 * np.cos(th) + ov_center_z)
             elif target == 'right_ovary':
                 th = np.random.uniform(0, np.pi)
                 ph = np.random.uniform(0, 2*np.pi)
-                f_lesion_x.append(2.5 * np.sin(th) * np.cos(ph) + 6.5)
-                f_lesion_y.append(2.5 * np.sin(th) * np.sin(ph))
-                f_lesion_z.append(2.5 * np.cos(th) + 2.5)
+                f_lesion_x.append(1.2 * np.sin(th) * np.cos(ph) + ov_center_x)
+                f_lesion_y.append(1.2 * np.sin(th) * np.sin(ph))
+                f_lesion_z.append(1.2 * np.cos(th) + ov_center_z)
             else: # Tubes
                 side = np.random.choice([-1, 1])
                 t_val = np.random.uniform(0.1, 0.9)
                 th_val = np.random.uniform(0, 2*np.pi)
-                cx = side * (2.5 + 4.0 * t_val)
-                cy = 1.0 * np.sin(np.pi * t_val)
-                cz = 4.5 - 2.0 * t_val + 0.5 * np.sin(np.pi * t_val)
-                r_val = 0.35 - 0.15 * t_val
+                cx = x_cornu_l * (1 - t_val) + (-ov_center_x) * t_val if side < 0 else x_cornu_r * (1 - t_val) + ov_center_x * t_val
+                cy = 0.4 * np.sin(np.pi * t_val)
+                cz = z_cornu + (ov_center_z - z_cornu) * t_val
+                r_val = 0.25 - 0.1 * t_val
                 f_lesion_x.append(cx + r_val * np.cos(th_val) * 1.8)
                 f_lesion_y.append(cy + r_val * np.sin(th_val) * 1.8)
                 f_lesion_z.append(cz)
                 
             f_lesion_colors.append(np.random.uniform(0.1, 0.4)) # Different color map range for future
             
-        # Adhesions (Dense, web-like organic strands)
+        # Adhesions (web-like strands: uterus to ovaries)
         adhesion_lines = []
         if self.state['adhesions_present']:
-            num_strands = np.random.randint(15, 35)
-            for _ in range(num_strands): 
-                # Connect Uterus back to Ovaries (common adhesion)
+            num_strands = min(20, max(8, self.state['lesion_count'] // 3))  # Scale with severity, cap for perf
+            for _ in range(num_strands):
                 th1 = np.random.uniform(np.pi/2, np.pi)
                 ph1 = np.random.uniform(0, 2*np.pi)
-                r1 = (3.8 + 1.6 * np.cos(th1)) * 1.02
-                pt1 = np.array([r1 * np.sin(th1) * np.cos(ph1), r1 * np.sin(th1) * np.sin(ph1), 5.5 * np.cos(th1)])
-                
+                r1 = (a + b * np.cos(th1)) * 1.02 * xy_scale
+                pt1 = np.array([r1 * np.sin(th1) * np.cos(ph1), r1 * np.sin(th1) * np.sin(ph1), half_height * np.cos(th1)])
                 side = np.random.choice([-1, 1])
                 th2 = np.random.uniform(0, np.pi)
                 ph2 = np.random.uniform(0, 2*np.pi)
-                pt2 = np.array([1.5 * np.sin(th2) * np.cos(ph2) + (side * 6.5), 1.5 * np.sin(th2) * np.sin(ph2), 1.5 * np.cos(th2) + 2.5])
-                
-                # Generate curved web line instead of straight
-                t_line = np.linspace(0, 1, 10)
-                for i in range(len(t_line)-1):
+                pt2 = np.array([1.1 * np.sin(th2) * np.cos(ph2) + (side * ov_center_x), 1.1 * np.sin(th2) * np.sin(ph2), 1.1 * np.cos(th2) + ov_center_z])
+                t_line = np.linspace(0, 1, 6)  # Fewer segments for perf
+                for i in range(len(t_line) - 1):
                     pA = pt1 * (1 - t_line[i]) + pt2 * t_line[i]
                     pB = pt1 * (1 - t_line[i+1]) + pt2 * t_line[i+1]
-                    # Add droop/sag to adhesion web
-                    pA[2] -= np.sin(t_line[i] * np.pi) * 1.5
-                    pB[2] -= np.sin(t_line[i+1] * np.pi) * 1.5
+                    pA = pA.copy()
+                    pB = pB.copy()
+                    pA[2] -= np.sin(t_line[i] * np.pi) * 1.2
+                    pB[2] -= np.sin(t_line[i+1] * np.pi) * 1.2
                     adhesion_lines.append((pA, pB))
-                side = np.random.choice([-6.5, 6.5])
-                pt2 = [1.4 * np.sin(th2) * np.cos(ph2) + side, 1.4 * np.sin(th2) * np.sin(ph2), 1.4 * np.cos(th2) + 2.5]
-                
-                adhesion_lines.append((pt1, pt2))
                 
         # future_lesions: optional sizes (same length as coords) for consistency
         f_sizes = [8.0] * len(f_lesion_x) if f_lesion_x else []
+        # Part annotations (reference-guided): label positions from geometry so system knows which part is what
+        def _centroid(xx, yy, zz, offset=(0, 0, 0.9)):
+            return (float(np.mean(xx)) + offset[0], float(np.mean(yy)) + offset[1], float(np.mean(zz)) + offset[2])
+        part_labels = [
+            ('Uterus', *_centroid(np.asarray(x_uterus), np.asarray(y_uterus), np.asarray(z_uterus))),
+            ('Left Ovary', *_centroid(left_ovary[0], left_ovary[1], left_ovary[2], (0, 0, 0.6))),
+            ('Right Ovary', *_centroid(right_ovary[0], right_ovary[1], right_ovary[2], (0, 0, 0.6))),
+            ('Left Fallopian Tube', *_centroid(left_tube[0], left_tube[1], left_tube[2], (-0.3, 0, 0.4))),
+            ('Right Fallopian Tube', *_centroid(right_tube[0], right_tube[1], right_tube[2], (0.3, 0, 0.4))),
+        ]
         return {
-            'uterus': (x_uterus, y_uterus, z_uterus),
+            'uterus': (x_uterus, y_uterus, z_uterus, uterus_i, uterus_j, uterus_k),
+            'uterus_cavity': cavity_mesh,
             'left_ovary': left_ovary,
             'right_ovary': right_ovary,
             'left_tube': left_tube,
@@ -392,7 +420,8 @@ class UterusDigitalTwin:
             'lesion_sizes': lesion_sizes,
             'future_lesions': (f_lesion_x, f_lesion_y, f_lesion_z, f_lesion_colors),
             'future_lesion_sizes': f_sizes,
-            'adhesions': adhesion_lines
+            'adhesions': adhesion_lines,
+            'part_labels': part_labels,
         }
 
     def generate_temporal_progression(self, base_probability, base_stage, future_risk_5yr, num_steps=4):

@@ -86,6 +86,9 @@ kubectl apply -f "$DEPLOY_DIR/k8s_pdb.yaml"
 
 echo "[deploy-aws] Waiting for deployments to roll out..."
 kubectl rollout status deployment/fedpinn-server --timeout=300s || true
+for i in 1 2 3 4 5; do
+  kubectl rollout status deployment/fedpinn-client-$i --timeout=120s || true
+done
 kubectl rollout status deployment/fedpinn-dashboard --timeout=300s || true
 
 # --- 4. Dashboard URL (LoadBalancer can take 2–5 min on AWS) ---

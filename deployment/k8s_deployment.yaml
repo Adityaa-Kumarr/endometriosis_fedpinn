@@ -89,11 +89,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "1.5Gi"
+            cpu: "1000m"
 ---
 # Client 2 — one pod, dataset = client_2
 apiVersion: apps/v1
@@ -125,11 +125,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "1.5Gi"
+            cpu: "1000m"
 ---
 # Client 3 — one pod, dataset = client_3
 apiVersion: apps/v1
@@ -161,11 +161,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "1.5Gi"
+            cpu: "1000m"
 ---
 # Client 4 — one pod, dataset = client_4
 apiVersion: apps/v1
@@ -197,11 +197,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "1.5Gi"
+            cpu: "1000m"
 ---
 # Client 5 — one pod, dataset = client_5
 apiVersion: apps/v1
@@ -233,11 +233,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "1.5Gi"
+            cpu: "1000m"
 ---
 # Streamlit dashboard (main UI)
 apiVersion: apps/v1
@@ -293,5 +293,5 @@ spec:
   type: LoadBalancer
   ports:
     - protocol: TCP
-      port: 8501
+      port: 80
       targetPort: 8501

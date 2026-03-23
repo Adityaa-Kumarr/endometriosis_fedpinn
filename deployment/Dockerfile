@@ -9,6 +9,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY . .
 
+# Generate synthetic dataset if missing (required for FL client pods)
+RUN if [ ! -f dataset/clients/client_1/clinical.csv ] || [ ! -f dataset/clients/client_1/us_embeddings.npy ]; then python data/synthetic_generator.py; fi
+
 # Expose ports for Flower server and Streamlit dashboard
 EXPOSE 8080 8501
 
