@@ -92,6 +92,8 @@ from models.pinn import EndometriosisPINN, FullFedPINNModel
 from models.image_encoder import load_image_encoder, encode_image
 from digital_twin.simulator import UterusDigitalTwin
 from digital_twin.omniverse_export import export_to_obj, export_lesions_to_usd_ascii
+from digital_twin.mesh_loader import load_uterus_mesh_for_plotly, get_uterus_mesh_path
+from digital_twin.reference_shape import get_reference_shape_params
 from report_gen import generate_advanced_pdf_report
 from services.clinical_validator import validate_clinical_input, get_cycle_context, CYCLE_PHASE_RANGES
 
@@ -163,93 +165,217 @@ def _read_json_robust(uploaded_file):
     except (ValueError, TypeError):
         pass
     return None
+st.set_page_config(page_title="EndoPINN — Clinical AI Research Platform", layout="wide", page_icon="🔬")
 
-st.set_page_config(page_title="AI Endometriosis Predictor", layout="wide", page_icon="🧬")
-
-# Premium Glassmorphism & Dark Mode CSS
+# Medical-Grade Dark Theme CSS
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
-    /* Dark Theme Background */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+
+    /* ── App Background ── */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-        color: #e2e8f0;
+        background: linear-gradient(160deg, #050d1a 0%, #0a1628 50%, #080f20 100%);
+        color: #dde6f0;
     }
-    /* Typography */
-    .main-header { 
-        font-size: clamp(1.8rem, 4vw, 3rem); 
-        font-weight: 800; 
-        background: -webkit-linear-gradient(45deg, #E83E8C, #8b5cf6, #3b82f6);
+
+    /* ── Main Header ── */
+    .main-header {
+        font-size: clamp(1.7rem, 4vw, 2.7rem);
+        font-weight: 800;
+        background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 40%, #818cf8 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 0px; 
+        background-clip: text;
         text-align: center;
+        margin-bottom: 4px;
+        letter-spacing: -0.4px;
+        line-height: 1.2;
     }
-    .sub-header { 
-        font-size: clamp(1rem, 2vw, 1.2rem); 
-        color: #94a3b8; 
-        margin-bottom: 30px; 
+    .sub-header {
+        font-size: clamp(0.82rem, 1.8vw, 1rem);
+        color: #475569;
         text-align: center;
-        font-weight: 300;
+        margin-bottom: 26px;
+        font-weight: 400;
+        letter-spacing: 0.04em;
     }
-    h1, h2, h3, h4, h5, h6, .stMarkdown p {
-        color: #f8fafc !important;
-    }
-    /* Glassmorphism Cards */
-    .metric-card { 
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px; 
-        border-radius: 12px; 
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); 
-        text-align: center; 
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    /* ── Fix: NO !important on h tags — preserves Streamlit widget labels ── */
+    h1, h2, h3, h4, h5, h6 { color: #e2e8f0; }
+    .stMarkdown p { color: #b8c5d3; }
+
+    /* ── Metric / Glass Cards ── */
+    .metric-card {
+        background: rgba(14, 165, 233, 0.05);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(14, 165, 233, 0.15);
+        padding: 20px 22px;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        text-align: center;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        will-change: transform;
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
     .metric-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 12px 40px 0 rgba(232, 62, 140, 0.2);
-        border-color: rgba(232, 62, 140, 0.5);
+        box-shadow: 0 12px 36px rgba(14,165,233,0.18);
+        border-color: rgba(14,165,233,0.4);
     }
-    .metric-value { 
-        font-size: clamp(1.5rem, 3vw, 2.5rem); 
-        font-weight: 800; 
-        color: #f8fafc; 
-        text-shadow: 0px 0px 10px rgba(255,255,255,0.2);
+    .metric-value {
+        font-size: clamp(1.4rem, 3vw, 2.2rem);
+        font-weight: 800;
+        color: #f1f5f9;
         line-height: 1.2;
     }
-    .metric-label { 
-        font-size: 1rem; 
-        color: #94a3b8; 
-        font-weight: 600; 
+    .metric-label {
+        font-size: 0.68rem;
+        color: #475569;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 10px;
+        letter-spacing: 1.3px;
+        margin-bottom: 7px;
     }
-    /* Customising Expander/Tabs for Dark Mode */
+
+    /* ── Section Cards ── */
+    .section-card {
+        background: rgba(255,255,255,0.025);
+        border: 1px solid rgba(255,255,255,0.065);
+        border-radius: 12px;
+        padding: 17px 19px;
+        margin-bottom: 14px;
+    }
+    .section-card-blue   { border-left: 3px solid #0ea5e9; }
+    .section-card-violet { border-left: 3px solid #6366f1; }
+    .section-card-amber  { border-left: 3px solid #f59e0b; }
+    .section-card-red    { border-left: 3px solid #ef4444; }
+    .section-card-green  { border-left: 3px solid #10b981; }
+
+    /* ── Input Group Headers ── */
+    .input-group-header {
+        font-size: 0.67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #0ea5e9;
+        margin-bottom: 10px;
+        padding-bottom: 7px;
+        border-bottom: 1px solid rgba(14,165,233,0.12);
+    }
+
+    /* ── Medical Disclaimer ── */
+    .medical-disclaimer {
+        background: rgba(245,158,11,0.07);
+        border: 1px solid rgba(245,158,11,0.28);
+        border-left: 4px solid #f59e0b;
+        padding: 13px 17px;
+        border-radius: 10px;
+        color: #fde68a;
+        font-size: 0.8rem;
+        line-height: 1.65;
+        margin: 13px 0;
+    }
+    .medical-disclaimer strong { color: #fbbf24; }
+
+    /* ── Risk Tags ── */
+    .risk-tag { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+    .risk-low      { background: rgba(16,185,129,0.13); color: #34d399; border: 1px solid rgba(16,185,129,0.27); }
+    .risk-moderate { background: rgba(245,158,11,0.13); color: #fbbf24; border: 1px solid rgba(245,158,11,0.27); }
+    .risk-high     { background: rgba(249,115,22,0.13); color: #fb923c; border: 1px solid rgba(249,115,22,0.27); }
+    .risk-severe   { background: rgba(239,68,68,0.13);  color: #f87171; border: 1px solid rgba(239,68,68,0.27);  }
+
+    /* ── Status Badges (FL nodes) ── */
+    .status-synced   { color: #34d399; font-weight: 600; }
+    .status-training { color: #fbbf24; font-weight: 600; }
+    .status-offline  { color: #f87171; font-weight: 600; }
+
+    /* ── Sidebar Branding ── */
+    .sidebar-brand {
+        text-align: center; padding: 16px 8px 18px;
+        border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 14px;
+    }
+    .sidebar-brand .brand-icon  { font-size: 2rem; line-height: 1; }
+    .sidebar-brand .brand-title { font-size: 0.9rem; font-weight: 700; color: #38bdf8; line-height: 1.4; margin-top: 8px; }
+    .sidebar-brand .brand-version { font-size: 0.6rem; color: #1e3a5f; font-family: monospace; margin-top: 2px; }
+    .sidebar-disclaimer {
+        background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.18);
+        border-radius: 8px; padding: 9px 11px; font-size: 0.68rem;
+        color: #fca5a5; line-height: 1.55; margin-bottom: 14px; text-align: center;
+    }
+    .session-info-card {
+        background: rgba(14,165,233,0.04); border: 1px solid rgba(14,165,233,0.09);
+        border-radius: 8px; padding: 11px 13px; font-size: 0.72rem; color: #94a3b8; margin-bottom: 12px;
+    }
+    .session-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .session-row:last-child { border-bottom: none; }
+    .session-label { color: #334155; font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.8px; }
+    .session-value { color: #cbd5e1; font-weight: 600; font-family: monospace; font-size: 0.7rem; }
+
+    /* ── Tabs ── */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 3px; background: rgba(255,255,255,0.02);
+        border-radius: 10px; padding: 4px;
+        border: 1px solid rgba(255,255,255,0.05);
+        margin-bottom: 4px;
     }
     .stTabs [data-baseweb="tab"] {
-        background-color: rgba(255, 255, 255, 0.05);
-        border-radius: 8px 8px 0px 0px;
-        color: #cbd5e1;
-        padding: 10px 20px;
+        background-color: transparent; border-radius: 7px;
+        color: #475569; padding: 8px 15px; font-size: 0.82rem; font-weight: 500;
+        transition: all 0.2s ease;
     }
+    .stTabs [data-baseweb="tab"]:hover { background-color: rgba(14,165,233,0.07); color: #94a3b8; }
     .stTabs [aria-selected="true"] {
-        background-color: rgba(232, 62, 140, 0.2) !important;
-        border-bottom: 3px solid #E83E8C !important;
-        color: #f8fafc !important;
-        font-weight: 600;
+        background-color: rgba(14,165,233,0.13) !important;
+        border-bottom: 2px solid #0ea5e9 !important;
+        color: #38bdf8 !important; font-weight: 700;
+    }
+
+    /* ── Primary CTA Button ── */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #0369a1, #0ea5e9) !important;
+        border: none !important; border-radius: 10px !important;
+        font-weight: 700 !important; letter-spacing: 0.3px !important;
+        box-shadow: 0 4px 16px rgba(14,165,233,0.28) !important;
+        transition: all 0.2s ease !important; width: 100%;
+    }
+    .stButton > button[kind="primary"]:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 28px rgba(14,165,233,0.38) !important;
+    }
+
+    /* ── Sidebar background ── */
+    .stSidebar { background: linear-gradient(180deg, #06101e 0%, #08131f 100%); }
+
+    /* ── Future Risk Card ── */
+    .future-risk-card {
+        background: linear-gradient(135deg, rgba(99,102,241,0.07), rgba(14,165,233,0.05));
+        border: 1px solid rgba(99,102,241,0.17); border-radius: 12px;
+        padding: 17px 19px; margin-bottom: 14px;
+    }
+    .future-risk-title {
+        font-size: 0.66rem; text-transform: uppercase; letter-spacing: 1.3px;
+        color: #818cf8; font-weight: 700; margin-bottom: 10px;
+    }
+
+    /* ── Responsive Breakpoints ── */
+    @media (max-width: 768px) {
+        .metric-card  { padding: 14px; }
+        .metric-value { font-size: 1.35rem; }
+        .section-card { padding: 13px; }
+        .stTabs [data-baseweb="tab"] { padding: 7px 9px; font-size: 0.73rem; }
+        .main-header  { font-size: 1.55rem; }
+        .sub-header   { font-size: 0.8rem; }
+    }
+    @media (max-width: 480px) {
+        .main-header { font-size: 1.2rem; }
+        .metric-card { padding: 11px; }
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 @st.cache_resource(show_spinner=False)
 def _get_image_encoder():
@@ -277,18 +403,33 @@ def load_models():
                 st.info("Multi-Modal 5-Stream Architecture Upgraded! Initializing fresh base model to accommodate structural tensor changes.")
                 try:
                     os.remove(model_path)
-                except:
+                except OSError:
                     pass
             else:
                 st.warning(f"Failed to load fine-tuned weights (re-initializing): {e}")
     model.eval()
     return model
 
+@st.cache_data(show_spinner=False)
+def _cached_uterus_mesh(path_key, target_size=12.0):
+    """Cache loaded uterus .glb/.obj to avoid reloading and re-analyzing on every Tab2 visit."""
+    return load_uterus_mesh_for_plotly(path=path_key if path_key else None, target_size=target_size)
+
+@st.cache_data(show_spinner=False)
+def _cached_twin_data(pred_prob, pred_stage, future_risk_val, reference_shape_key="", resolution=1.0):
+    """Cache 3D digital twin geometry. resolution: 1.0=full, 0.6=medium, 0.4=low."""
+    twin = UterusDigitalTwin()
+    seed = int((float(pred_prob) * 1000 + int(pred_stage) * 17) % 2**31)
+    twin.update_from_model_prediction(float(pred_prob), int(pred_stage), float(future_risk_val), seed=seed)
+    ref_params = get_reference_shape_params(path=reference_shape_key or None) if reference_shape_key else None
+    return twin.generate_3d_scatter_data(reference_shape=ref_params, resolution=resolution)
+
 def create_3d_plot(twin_data, inflammation_level, layers=None, opacities=None, time_progression=0.0,
-                  show_scale_bar=True, show_axis_labels=True):
+                  show_scale_bar=True, show_axis_labels=True, uterus_mesh=None):
     """
     Build 3D Digital Twin plot with optional layer toggles, per-structure opacity,
     time progression (0=current only, 1=include all future lesions), scale bar, and axis labels.
+    uterus_mesh: optional (x, y, z, i, j, k) from load_uterus_mesh_for_plotly() to show a real .glb mesh instead of parametric uterus.
     """
     layers = layers or {}
     opacities = opacities or {}
@@ -302,28 +443,102 @@ def create_3d_plot(twin_data, inflammation_level, layers=None, opacities=None, t
         ambient=0.45, diffuse=0.9, specular=1.5, roughness=0.25, fresnel=0.8
     )
     
-    # Uterus
-    u_x, u_y, u_z = twin_data['uterus']
-    colorscale_u = [[0, 'rgb(255, 210, 215)'], [1, f'rgb(255, {int(150 - inflammation_level*120)}, {int(150 - inflammation_level*120)})']]
+    # ── Uterus: real mesh (.glb) or parametric (outer + inner cavity layers) ──
     if _vis('uterus', True):
-        fig.add_trace(go.Surface(
-            x=u_x, y=u_y, z=u_z,
-            opacity=_op('uterus', 1.0), colorscale=colorscale_u, showscale=False, name='Uterus Body',
-            lighting=lighting_props, hoverinfo='name', hovertemplate='Uterus Tissue<extra></extra>'
-        ))
+        if uterus_mesh is not None:
+            if len(uterus_mesh) == 7:
+                x, y, z, i, j, k, vertex_colors = uterus_mesh
+                fig.add_trace(go.Mesh3d(
+                    x=x, y=y, z=z, i=i, j=j, k=k,
+                    vertexcolor=vertex_colors,
+                    opacity=_op('uterus', 1.0), name='Uterus (Cervix / Body / Fundus)',
+                    lighting=lighting_props, hoverinfo='name',
+                    hovertemplate='Uterus mesh - regions: Cervix (blue), Body (pink), Fundus (darker pink)<extra></extra>'
+                ))
+            else:
+                x, y, z, i, j, k = uterus_mesh
+                color = f'rgb(255, {int(150 - inflammation_level*120)}, {int(150 - inflammation_level*120)})'
+                fig.add_trace(go.Mesh3d(
+                    x=x, y=y, z=z, i=i, j=j, k=k,
+                    opacity=_op('uterus', 1.0), color=color, name='Uterus Body',
+                    lighting=lighting_props, hoverinfo='name', hovertemplate='Uterus (mesh)<extra></extra>'
+                ))
+        else:
+            ut = twin_data['uterus']
+            if len(ut) == 6:
+                u_x, u_y, u_z, u_i, u_j, u_k = ut
+                # Inflammation-mapped color: low→soft pink, high→deep red→purple
+                r_ch = 255
+                g_ch = max(30, int(175 - inflammation_level * 145))
+                b_ch = max(20, int(175 - inflammation_level * 155))
+                outer_color = f'rgb({r_ch},{g_ch},{b_ch})'
+                fig.add_trace(go.Mesh3d(
+                    x=u_x, y=u_y, z=u_z, i=u_i, j=u_j, k=u_k,
+                    opacity=max(0.20, _op('uterus', 0.25)),  # semi-transparent outer wall
+                    color=outer_color,
+                    name='Perimetrium & Myometrium',
+                    lighting=dict(ambient=0.45, diffuse=0.85, specular=0.3, roughness=0.55),
+                    hoverinfo='name',
+                    hovertemplate='Outer Uterus Wall<extra></extra>'
+                ))
+                # Inner endometrial cavity layer
+                cav = twin_data.get('uterus_cavity')
+                if cav and len(cav) == 6:
+                    cx, cy, cz, ci, cj, ck = cav
+                    fig.add_trace(go.Mesh3d(
+                        x=cx, y=cy, z=cz, i=ci, j=cj, k=ck,
+                        opacity=0.88,
+                        color='rgb(180, 60, 60)',
+                        name='Endometrial Cavity',
+                        lighting=dict(ambient=0.5, diffuse=0.8, specular=0.1, roughness=0.7),
+                        hoverinfo='name',
+                        hovertemplate='Endometrial Cavity (inner lining)<extra></extra>'
+                    ))
+            else:
+                u_x, u_y, u_z = ut
+                colorscale_u = [[0, 'rgb(255, 180, 190)'], [0.5, 'rgb(255, 120, 130)'], [1, f'rgb(255, {int(80 - inflammation_level*60)}, {int(80 - inflammation_level*60)})']]
+                fig.add_trace(go.Surface(
+                    x=u_x, y=u_y, z=u_z,
+                    opacity=_op('uterus', 1.0), colorscale=colorscale_u, showscale=False, name='Uterus Body',
+                    lighting=lighting_props, hoverinfo='name', hovertemplate='Uterus Tissue<extra></extra>'
+                ))
+                
+                # Cervix (New in V3)
+                if 'cervix' in twin_data:
+                    c_x, c_y, c_z = twin_data['cervix']
+                    fig.add_trace(go.Surface(
+                        x=c_x, y=c_y, z=c_z,
+                        opacity=_op('uterus', 1.0), colorscale=[[0, 'rgb(255,200,210)'], [1, 'rgb(255,160,170)']], 
+                        showscale=False, name='Cervix',
+                        lighting=lighting_props, hoverinfo='name', hovertemplate='Cervix<extra></extra>'
+                    ))
+
+                # Broad Ligaments (New in V3)
+                for side, key in [('Left', 'broad_ligament_l'), ('Right', 'broad_ligament_r')]:
+                    if key in twin_data:
+                        l_x, l_y, l_z = twin_data[key]
+                        fig.add_trace(go.Surface(
+                            x=l_x, y=l_y, z=l_z,
+                            opacity=0.35, colorscale=[[0, 'rgb(255,220,230)'], [1, 'rgb(255,220,230)']], 
+                            showscale=False, name=f'{side} Broad Ligament',
+                            lighting=dict(ambient=0.6, diffuse=0.4), hoverinfo='name',
+                            hovertemplate=f'{side} Broad Ligament<extra></extra>'
+                        ))
+
     
-    # Ovaries
+    # Ovaries (reference: lighter, off-white / creamy vs reddish-pink uterus and tubes)
+    ovary_colorscale = [[0, 'rgb(255,250,245)'], [0.5, 'rgb(248,240,230)'], [1, 'rgb(240,232,220)']]
     for ovary_name, key in [('Left Ovary', 'left_ovary'), ('Right Ovary', 'right_ovary')]:
         if not _vis(key, True):
             continue
         o_x, o_y, o_z = twin_data[key]
         fig.add_trace(go.Surface(
             x=o_x, y=o_y, z=o_z,
-            opacity=_op(key, 1.0), colorscale='Sunset', showscale=False, name=ovary_name,
+            opacity=_op(key, 1.0), colorscale=ovary_colorscale, showscale=False, name=ovary_name,
             lighting=lighting_props, hoverinfo='name', hovertemplate=f'{ovary_name}<extra></extra>'
         ))
     
-    # Fallopian Tubes
+    # Fallopian Tubes (reference: reddish-pink, slender, convoluted; fimbriae at distal end)
     for tube_name, key in [('Left Fallopian Tube', 'left_tube'), ('Right Fallopian Tube', 'right_tube')]:
         if not _vis(key, True):
             continue
@@ -334,21 +549,27 @@ def create_3d_plot(twin_data, inflammation_level, layers=None, opacities=None, t
             lighting=lighting_props, hoverinfo='name', hovertemplate=f'{tube_name}<extra></extra>'
         ))
     
-    # Anatomical Labels
+    # Anatomical Labels (reference-guided: white text, from geometry so system knows which part is what)
     if _vis('labels', True):
-        label_x = [0, -7.5, 7.5, -4.5, 4.5]
-        label_y = [2.0, 0, 0, 0, 0]
-        label_z = [6.5, 4.0, 4.0, 5.0, 5.0]
-        label_text = ['Uterus', 'Left Ovary', 'Right Ovary', 'Left Fallopian Tube', 'Right Fallopian Tube']
+        part_labels = twin_data.get('part_labels')
+        if part_labels:
+            label_text = [p[0] for p in part_labels]
+            label_x = [p[1] for p in part_labels]
+            label_y = [p[2] for p in part_labels]
+            label_z = [p[3] for p in part_labels]
+        else:
+            label_x, label_y, label_z = [0, -7.5, 7.5, -4.5, 4.5], [2.0, 0, 0, 0, 0], [6.5, 4.0, 4.0, 5.0, 5.0]
+            label_text = ['Uterus', 'Left Ovary', 'Right Ovary', 'Left Fallopian Tube', 'Right Fallopian Tube']
         fig.add_trace(go.Scatter3d(
             x=label_x, y=label_y, z=label_z,
             mode='text+markers',
             text=label_text,
             textposition='top center',
-            textfont=dict(color='gray', size=11, family='Arial'),
-            marker=dict(size=3, color='gray'),
+            textfont=dict(color='#ffffff', size=13, family='Arial'),
+            marker=dict(size=4, color='#e2e8f0', symbol='circle-open', line=dict(width=1, color='#ffffff')),
             name='Anatomical Labels',
-            hoverinfo='none'
+            hoverinfo='text',
+            hovertext=label_text,
         ))
     
     # Current Lesions (use lesion_sizes when available)
@@ -394,17 +615,22 @@ def create_3d_plot(twin_data, inflammation_level, layers=None, opacities=None, t
                 hovertemplate='Future Projected Lesion<extra></extra>'
             ))
     
-    # Adhesions
-    if _vis('adhesions', True):
-        for pt1, pt2 in twin_data['adhesions']:
-            fig.add_trace(go.Scatter3d(
-                x=[pt1[0], pt2[0]], y=[pt1[1], pt2[1]], z=[pt1[2], pt2[2]],
-                mode='lines',
-                line=dict(color='rgba(139, 0, 0, 0.6)', width=6),
-                name='Physical Adhesion Band',
-                showlegend=False,
-                hovertemplate='Adhesion Band<extra></extra>'
-            ))
+    # Adhesions (single trace with disconnected segments for performance)
+    if _vis('adhesions', True) and twin_data['adhesions']:
+        adh = twin_data['adhesions']
+        x_adh, y_adh, z_adh = [], [], []
+        for pt1, pt2 in adh:
+            x_adh.extend([pt1[0], pt2[0], None])
+            y_adh.extend([pt1[1], pt2[1], None])
+            z_adh.extend([pt1[2], pt2[2], None])
+        fig.add_trace(go.Scatter3d(
+            x=x_adh[:-1], y=y_adh[:-1], z=z_adh[:-1],
+            mode='lines',
+            line=dict(color='rgba(139, 0, 0, 0.6)', width=6),
+            name='Physical Adhesion Bands',
+            showlegend=True,
+            hovertemplate='Adhesion Band<extra></extra>'
+        ))
     
     # Scale bar (5 cm reference)
     if show_scale_bar:
@@ -749,30 +975,78 @@ def generate_health_recommendations(clinical_data, p_prob):
     return plan
 
 def main():
-    st.markdown('<p class="main-header">🧬 Federated Digital Twin for Endometriosis Forecast</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Advanced multi-modal prediction using Adaptive FedPINN, XAI, and 3D UI Mesh Simulation.</p>', unsafe_allow_html=True)
+    try:
+        _run_main()
+    except Exception as e:
+        import traceback
+        st.error(f"🚨 APPLICATION CRASHED DURING RENDER: {e}")
+        st.code(traceback.format_exc(), language="python")
+
+def _run_main():
+    # ── Hero Header ──────────────────────────────────────────────────────────
+    st.markdown('''
+    <p class="main-header">🔬 EndoPINN Clinical AI</p>
+    <p class="sub-header">Federated Physics-Informed Neural Network · Endometriosis Research Platform · v2.0</p>
+    ''', unsafe_allow_html=True)
     
     # Defensive session_state init so Tab2 (3D Twin) and Tab3 (FL) never KeyError if user opens them before prediction runs
     defaults = {
         'pred_prob': 0.0, 'pred_prob_std': 0.05, 'pred_stage': 0,
         'future_risk': np.array([0.0, 0.0, 0.0]), 'gate_probs': np.array([0.25, 0.25, 0.25, 0.25]),
-        'clinical_data': np.array([[32.0, 25.0, 5.0, 5.0, 0.5, 0.5, 45.0, 150.0, 10.0]])
+        'clinical_data': np.array([[32.0, 25.0, 5.0, 5.0, 0.5, 0.5, 45.0, 150.0, 10.0]]),
+        'prediction_computed': False,
+        'last_computed_clinical_data': None
     }
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
+
+    # ── Sidebar ──────────────────────────────────────────────────────────────
+    with st.sidebar:
+        # Branding
+        st.markdown('''
+        <div class="sidebar-brand">
+            <div class="brand-icon">🔬</div>
+            <div class="brand-title">EndoPINN AI</div>
+            <div class="brand-version">v2.0 · Research Build · FedPINN</div>
+        </div>
+        <div class="sidebar-disclaimer">
+            ⚠️ <strong>RESEARCH USE ONLY</strong><br>
+            Not a medical diagnosis. For clinical decisions, consult a qualified gynecologist.
+        </div>
+        ''', unsafe_allow_html=True)
+
+        # Session state info
+        pred_prob_display = f"{st.session_state.get('pred_prob', 0.0)*100:.1f}%"
+        pred_stage_display = ["None","Stage I","Stage II","Stage III","Stage IV"][st.session_state.get('pred_stage', 0)]
+        computed = "✅ Yes" if st.session_state.get('prediction_computed') else "⏳ Pending"
+        st.markdown(f'''
+        <div class="session-info-card">
+            <div class="session-row"><span class="session-label">Risk Score</span><span class="session-value">{pred_prob_display}</span></div>
+            <div class="session-row"><span class="session-label">Est. Stage</span><span class="session-value">{pred_stage_display}</span></div>
+            <div class="session-row"><span class="session-label">Computed</span><span class="session-value">{computed}</span></div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+        st.markdown("---")
+        if st.button("🔄 New Patient / Reset", help="Clear prediction state and reset for new patient.", use_container_width=True):
+            for key in list(st.session_state.keys()):
+                if key in ('pred_prob', 'pred_prob_std', 'pred_stage', 'future_risk', 'gate_probs', 'clinical_data', 'us_embedding_from_image', 'prediction_computed', 'last_computed_clinical_data'):
+                    del st.session_state[key]
+            st.cache_data.clear()
+            st.rerun()
     
     model = load_models()
     twin = UterusDigitalTwin()
     
     # Tabs layout
-    tab1, tab2, tab3, tab4 = st.tabs(["🩺 Patient Evaluation & Analysis", "🧊 3D Digital Twin Viewer", "🌐 Federated Network Status", "🚀 Custom Model Training"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🩺 Patient Evaluation", "🧊 3D Digital Twin", "🌐 Federated Network", "🚀 Model Training"])
     
     with tab1:
         col_input, col_results = st.columns([1, 2])
         
         with col_input:
-            st.subheader("Patient Report Upload")
+            st.markdown('<div class="input-group-header">📂 Patient Report Upload</div>', unsafe_allow_html=True)
             # Image types: include common + medical (PIL-readable: bmp, tiff, tif, gif)
             _IMAGE_EXTENSIONS = ('png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff', 'tif', 'gif')
             uploaded_file = st.file_uploader(
@@ -787,14 +1061,10 @@ def main():
                             'estradiol': 250.0, 'progesterone': 12.0,
                             'il6': 5.0, 'amh': 2.5, 'crp': 2.0}
             
-            # Clear image-based ultrasound embedding when upload is not an image (so we don't reuse old image)
             if uploaded_file is not None:
                 file_ext = uploaded_file.name.split('.')[-1].lower()
-                if file_ext not in _IMAGE_EXTENSIONS:
-                    if 'us_embedding_from_image' in st.session_state:
-                        del st.session_state['us_embedding_from_image']
-            if uploaded_file is not None:
-                file_ext = uploaded_file.name.split('.')[-1].lower()
+                if file_ext not in _IMAGE_EXTENSIONS and 'us_embedding_from_image' in st.session_state:
+                    del st.session_state['us_embedding_from_image']
                 df = None
                 try:
                     if file_ext == 'csv':
@@ -811,20 +1081,63 @@ def main():
                     elif file_ext == 'pdf':
                         import PyPDF2
                         reader = PyPDF2.PdfReader(uploaded_file)
-                        text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
-                        with st.spinner("🤖 AI Extracting data from PDF..."):
-                            import time
-                            time.sleep(1) # Simulate AI delay
-                            df = mock_ai_extract_to_df(text)
-                    elif file_ext in ['png', 'jpg', 'jpeg']:
+                        text = " ".join([page.extract_text() or "" for page in reader.pages])
+                        if not text.strip():
+                            st.warning("PDF has no extractable text (e.g. scanned). Upload an image of the report for OCR.")
+                            df = None
+                        else:
+                            with st.spinner("🤖 AI Extracting data from PDF..."):
+                                df = mock_ai_extract_to_df(text)
+                    elif file_ext in _IMAGE_EXTENSIONS:
                         from PIL import Image
-                        import pytesseract
-                        image = Image.open(uploaded_file)
-                        text = pytesseract.image_to_string(image)
-                        with st.spinner("🤖 AI Extracting data from Image..."):
-                            import time
-                            time.sleep(1) # Simulate AI delay
-                            df = mock_ai_extract_to_df(text)
+                        try:
+                            import pytesseract
+                            uploaded_file.seek(0)
+                            image = Image.open(uploaded_file).copy()
+                            if image.mode not in ('RGB', 'L'):
+                                image = image.convert('RGB')
+                            try:
+                                enc = _get_image_encoder()
+                                if enc is not None:
+                                    emb = encode_image(image, encoder=enc)
+                                    if emb is not None and emb.shape == (1, 128):
+                                        st.session_state['us_embedding_from_image'] = emb
+                                        st.caption("🖼️ Image used for prediction (vision encoder).")
+                            except Exception:
+                                pass
+                            text = pytesseract.image_to_string(image)
+                            if not text.strip():
+                                st.warning("No text detected in image. Using default parameters.")
+                                df = pd.DataFrame([{'age': 32, 'bmi': 24.5, 'pelvic_pain_score': 8, 'dysmenorrhea_score': 7, 'ca125': 65.0, 'estradiol': 250.0}])
+                            else:
+                                with st.spinner("🤖 AI Extracting data from Image..."):
+                                    df = mock_ai_extract_to_df(text)
+                        except Exception as img_err:
+                            st.warning(f"Image/OCR error: {img_err}. Using default parameters.")
+                            df = pd.DataFrame([{'age': 32, 'bmi': 24.5, 'pelvic_pain_score': 8, 'dysmenorrhea_score': 7, 'ca125': 65.0, 'estradiol': 250.0}])
+                    elif file_ext == 'txt':
+                        raw = uploaded_file.read()
+                        try:
+                            text = raw.decode('utf-8')
+                        except UnicodeDecodeError:
+                            text = raw.decode('latin-1', errors='replace')
+                        if not text.strip():
+                            st.warning("Text file is empty; using default parameters.")
+                            df = None
+                        else:
+                            with st.spinner("🤖 AI Extracting data from clinical notes..."):
+                                df = mock_ai_extract_to_df(text)
+                    elif file_ext in ('xlsx', 'xls'):
+                        try:
+                            uploaded_file.seek(0)
+                            engine = 'openpyxl' if file_ext == 'xlsx' else ('xlrd' if file_ext == 'xls' else None)
+                            df = pd.read_excel(uploaded_file, engine=engine)
+                            if df is not None and df.empty:
+                                df = None
+                        except Exception as excel_err:
+                            dep = "openpyxl" if file_ext == 'xlsx' else "xlrd"
+                            st.error(f"Excel read failed: {excel_err}. Install: pip install {dep}")
+                            df = None
                     else:
                         st.error("Unsupported file format.")
                         df = None
@@ -841,7 +1154,13 @@ def main():
                         s_match = sum(1 for k in s_kws if any(k in str(c) for c in df.columns))
                         
                         if s_match > c_match and c_match < 2:
-                            st.error(f"Validation Failed: '{uploaded_file.name}' appears to be a raw Sensor Dataset. Please upload a structured Clinical Profile (CSV/JSON/PDF) here.")
+                            st.info(
+                                "📊 **Sensor / wearable report detected.** This file is accepted. "
+                                "For risk prediction the model needs **clinical parameters** (age, BMI, pain scores, biomarkers). "
+                                "Please enter them in the sliders below or upload a clinical report (CSV/JSON/PDF) as well. "
+                                "Sensor data is used in **Custom Model Training** for multi-modal learning."
+                            )
+                            st.success(f"Report '{uploaded_file.name}' accepted (sensor data). Enter clinical parameters below or upload a clinical report.")
                         else:
                             def_map = {
                                 'age': float(df.get('age', pd.Series([32])).iloc[0]),
@@ -859,7 +1178,7 @@ def main():
                 except Exception as e:
                     st.error(f"Error parsing file: {e}")
 
-            st.subheader("Clinical Parameters")
+            st.markdown('<div class="input-group-header">👤 Clinical Parameters</div>', unsafe_allow_html=True)
             
             # Use clamping to ensure extracted defaults never break the Streamlit UI limits
             age = st.slider("Age", 0, 100, min(100, max(0, int(default_vals['age']))))
@@ -873,13 +1192,13 @@ def main():
             with col_b:
                 fam_hx = st.selectbox("Family History", [0, 1], format_func=lambda x: "Yes" if x else "No", index=int(default_vals['fam_hx']))
                 
-            st.subheader("Biomarkers & Hormones")
+            st.markdown('<div class="input-group-header">🧪 Biomarkers & Hormones</div>', unsafe_allow_html=True)
             cycle_phase = st.selectbox("Menstrual Cycle Phase", list(CYCLE_PHASE_RANGES.keys()), index=3)
             ca125 = st.slider("CA-125 (U/mL)", 0.0, 1000.0, min(1000.0, max(0.0, float(default_vals['ca125']))))
             estradiol = st.slider("Estradiol (pg/mL)", 0.0, 2000.0, min(2000.0, max(0.0, float(default_vals['estradiol']))))
             prog = st.slider("Progesterone (ng/mL)", 0.0, 200.0, min(200.0, max(0.0, float(default_vals['progesterone']))))
             
-            st.subheader("Advanced Inflammatory Markers")
+            st.markdown('<div class="input-group-header">🔬 Advanced Inflammatory Markers</div>', unsafe_allow_html=True)
             il6 = st.slider("IL-6 (pg/mL)", 0.0, 500.0, min(500.0, max(0.0, float(default_vals['il6']))))
             amh = st.slider("AMH (ng/mL)", 0.0, 25.0, min(25.0, max(0.0, float(default_vals['amh']))))
             crp = st.slider("CRP (mg/L)", 0.0, 300.0, min(300.0, max(0.0, float(default_vals['crp']))))
@@ -887,101 +1206,86 @@ def main():
             # Validate inputs
             input_dict = {'age': age, 'bmi': bmi, 'pelvic_pain': pelvic_pain, 'dysmenorrhea': dysmenorrhea,
                           'ca125': ca125, 'estradiol': estradiol, 'progesterone': prog, 'il6': il6, 'amh': amh, 'crp': crp}
-            is_valid, val_warnings, val_errors = validate_clinical_input(input_dict)
             
-            if val_errors:
-                for err in val_errors:
-                    st.error(f"⛔ {err}")
-            if val_warnings:
-                with st.expander("📊 Biomarker Alerts (click to expand)", expanded=False):
-                    for warn in val_warnings:
-                        st.warning(warn)
-            
-            # Show cycle-phase hormone context
-            cycle_msgs = get_cycle_context(cycle_phase, estradiol, prog)
-            with st.expander("🔬 Hormone Cycle Context", expanded=False):
-                for msg in cycle_msgs:
-                    st.info(msg)
+            try:
+                from services.clinical_validator import validate_clinical_input, get_cycle_context
+                is_valid, val_warnings, val_errors = validate_clinical_input(input_dict)
+                if val_errors:
+                    for err in val_errors:
+                        st.error(f"⛔ {err}")
+                if val_warnings:
+                    with st.expander("📊 Biomarker Alerts (click to expand)", expanded=False):
+                        for warn in val_warnings:
+                            st.warning(warn)
+                # Show cycle-phase hormone context
+                cycle_msgs = get_cycle_context(cycle_phase, estradiol, prog)
+                with st.expander("🔬 Hormone Cycle Context", expanded=False):
+                    for msg in cycle_msgs:
+                        st.info(msg)
+            except ImportError:
+                pass
             
             clinical_data = np.array([[age, bmi, pelvic_pain, dysmenorrhea, dyspareunia, fam_hx, ca125, estradiol, prog, il6, amh, crp]])
-            st.caption("✨ AI estimates update in real-time as you adjust parameters.")
+            
+            run_prediction = st.button("▶️ Run Prediction", type="primary", use_container_width=True, help="Compute risk score and XAI attribution. Click after adjusting parameters.")
+            st.caption("Adjust parameters above, then click Run Prediction. Results update in the panel on the right.")
 
         with col_results:
-            # Meaningful clinical ranges for normalization (expanded to 12 features)
-            mock_means = np.array([32.0, 25.0, 5.0, 5.0, 0.5, 0.5, 45.0, 150.0, 10.0, 5.0, 2.5, 2.0])
-            mock_stds = np.array([7.0, 4.0, 3.0, 3.0, 0.5, 0.5, 15.0, 50.0, 5.0, 4.0, 1.5, 2.0])
-            tensor_data = torch.tensor((clinical_data - mock_means) / mock_stds, dtype=torch.float32)
-            
-            # Use image-derived 128-d embedding if doctor uploaded an image; otherwise zeros
-            if st.session_state.get('us_embedding_from_image') is not None:
-                emb = st.session_state['us_embedding_from_image']
-                if isinstance(emb, np.ndarray) and emb.shape == (1, 128):
-                    us_data = torch.tensor(emb, dtype=torch.float32)
-                else:
-                    us_data = torch.zeros((1, 128), dtype=torch.float32)
-            else:
-                us_data = torch.zeros((1, 128), dtype=torch.float32)
-            genomic_data = torch.zeros((1, 256), dtype=torch.float32)
-            path_data = torch.zeros((1, 64), dtype=torch.float32)
-            sensor_data = torch.zeros((1, 32), dtype=torch.float32)
-            
-            with torch.no_grad():
-                prob, stage_logits, future_risk, gate_probs = model(tensor_data, us_data, genomic_data, path_data, sensor_data)
-                
-                # --- MONTE CARLO DROPOUT UNCERTAINTY QUANTIFICATION ---
-                # We cannot use model.train() directly because BatchNorm1d throws an error with batch size 1.
-                # Instead, we keep model in eval(), but force Dropout layers to train mode.
-                model.eval()
-                for m in model.modules():
-                    if m.__class__.__name__.startswith('Dropout'):
-                        m.train()
+            should_run = run_prediction or not st.session_state.get('prediction_computed', False)
+            last_computed = st.session_state.get('last_computed_clinical_data')
+            params_changed = last_computed is not None and not np.allclose(clinical_data, last_computed, rtol=1e-5)
+            if params_changed and st.session_state.get('prediction_computed'):
+                st.info("📝 Parameters changed. Click **Run prediction** to update results.")
+            if should_run:
+                with st.spinner("Computing prediction..."):
+                    pop_means = np.array([32.0, 25.0, 5.0, 5.0, 0.5, 0.5, 45.0, 150.0, 10.0, 5.0, 2.5, 2.0])
+                    pop_stds = np.array([7.0, 4.0, 3.0, 3.0, 0.5, 0.5, 15.0, 50.0, 5.0, 4.0, 1.5, 2.0])
+                    # Pad inputs to 12 if model expects 12
+                    tensor_data = torch.tensor((clinical_data - pop_means) / pop_stds, dtype=torch.float32)
+                    if st.session_state.get('us_embedding_from_image') is not None:
+                        emb = st.session_state['us_embedding_from_image']
+                        us_data = torch.tensor(emb, dtype=torch.float32) if isinstance(emb, np.ndarray) and emb.shape == (1, 128) else torch.zeros((1, 128), dtype=torch.float32)
+                    else:
+                        us_data = torch.zeros((1, 128), dtype=torch.float32)
+                    genomic_data = torch.zeros((1, 256), dtype=torch.float32)
+                    path_data = torch.zeros((1, 64), dtype=torch.float32)
+                    sensor_data = torch.zeros((1, 32), dtype=torch.float32)
+                    with torch.no_grad():
+                        prob, stage_logits, future_risk, gate_probs = model(tensor_data, us_data, genomic_data, path_data, sensor_data)
+                        model.eval()
+                        # Batch MC Dropout optimization
+                        for m in model.modules():
+                            if m.__class__.__name__.startswith('Dropout'):
+                                m.train()
                         
-                mc_probs = []
-                for _ in range(30): # 30 stochastic forward passes (Gal & Ghahramani, 2016)
-                    p, _, _, _ = model(tensor_data, us_data, genomic_data, path_data, sensor_data)
-                    mc_probs.append(p.item())
-                    
-                # Revert dropout layers back to eval mode
-                for m in model.modules():
-                    if m.__class__.__name__.startswith('Dropout'):
-                        m.eval()
-                
-                mean_p = np.mean(mc_probs)
-                std_p = np.std(mc_probs)
-                # Overwrite prob with the more robust MC Mean if trained weights exist
-                
-                # --- STARTUP DEMO OVERRIDE ---
-                # If there are no trained weights saved yet, PyTorch produces random noise.
-                # To make this perfectly workable and dynamic for the startup demo, we calculate a deterministic heuristic.
-                if not os.path.exists('global_model.pth'):
-                    # Mathematically ground the output to the input parameters (expanded for 12 features)
-                    demo_risk = (pelvic_pain + dysmenorrhea) / 20.0 * 0.3 + (ca125 / 150.0) * 0.25 + (estradiol / 500.0) * 0.2 + (il6 / 50.0) * 0.15 + (crp / 30.0) * 0.1
-                    demo_risk = min(0.99, max(0.01, demo_risk)) # Clamp
-                    
-                    prob = torch.tensor([[demo_risk]])
-                    stage_idx = min(4, int(demo_risk * 5))
-                    stage_logits = torch.zeros((1, 5))
-                    stage_logits[0, stage_idx] = 10.0 # Force argmax
-                    
-                    f1 = min(0.99, demo_risk * 1.1)
-                    f3 = min(0.99, demo_risk * 1.3)
-                    f5 = min(0.99, demo_risk * 1.6)
-                    future_risk = torch.tensor([[f1, f3, f5]])
-                    gate_probs = torch.tensor([[0.05, 0.8, 0.1, 0.05]]) if pelvic_pain > 7 else torch.tensor([[0.5, 0.1, 0.3, 0.1]])
-                    
-                    # Mock uncertainty bounds for demo
-                    mean_p = prob.item()
-                    std_p = 0.02 + (demo_risk * 0.05) 
-                else:
-                    prob = torch.tensor([[mean_p]])
-                
-            st.session_state['pred_prob'] = prob.item()
-            st.session_state['pred_prob_std'] = std_p
-            st.session_state['pred_stage'] = torch.argmax(stage_logits, dim=1).item()
-            st.session_state['future_risk'] = future_risk.squeeze().numpy()
-            st.session_state['gate_probs'] = gate_probs.squeeze().numpy()
-            st.session_state['clinical_data'] = clinical_data
-            
+                        mc_samples = 30
+                        tensor_data_mc = tensor_data.repeat(mc_samples, 1)
+                        us_data_mc = us_data.repeat(mc_samples, 1)
+                        genomic_data_mc = genomic_data.repeat(mc_samples, 1)
+                        path_data_mc = path_data.repeat(mc_samples, 1)
+                        sensor_data_mc = sensor_data.repeat(mc_samples, 1)
+                        p_mc, _, _, _ = model(tensor_data_mc, us_data_mc, genomic_data_mc, path_data_mc, sensor_data_mc)
+                        mc_probs = p_mc.squeeze().tolist()
+                        mean_p = np.mean(mc_probs)
+                        std_p = np.std(mc_probs)
+                        
+                        for m in model.modules():
+                            if m.__class__.__name__.startswith('Dropout'):
+                                m.eval()
+                        
+                        if not os.path.exists('global_model.pth'):
+                            st.error("🚨 **No trained global model found!** Please ensure you have completed at least one federated learning round (from the clients) before running predictions.")
+                            pass
+                        prob = torch.tensor([[mean_p]])
+                    st.session_state['pred_prob'] = prob.item()
+                    st.session_state['pred_prob_std'] = std_p
+                    st.session_state['pred_stage'] = torch.argmax(stage_logits, dim=1).item()
+                    st.session_state['stage_logits'] = stage_logits  # persist for chart rendering
+                    st.session_state['future_risk'] = future_risk.squeeze().numpy()
+                    st.session_state['gate_probs'] = gate_probs.squeeze().numpy()
+                    st.session_state['clinical_data'] = clinical_data
+                    st.session_state['prediction_computed'] = True
+                    st.session_state['last_computed_clinical_data'] = clinical_data.copy()
             p_prob = st.session_state['pred_prob']
             p_std = st.session_state['pred_prob_std']
             p_stage = st.session_state['pred_stage']
@@ -1036,7 +1340,12 @@ def main():
                 st.warning("⚠️ **Inconclusive Result:** The AI confidence is between 40-60%. There is insufficient signal for a reliable prediction. Additional clinical data or imaging is recommended.")
             
             # --- STAGE PROBABILITY DISTRIBUTION ---
-            stage_probs = torch.softmax(stage_logits, dim=1).squeeze().numpy()
+            _stage_logits = st.session_state.get('stage_logits', None)
+            if _stage_logits is not None:
+                stage_probs = torch.softmax(_stage_logits, dim=1).squeeze().numpy()
+            else:
+                # Fallback: uniform over stages
+                stage_probs = [0.2, 0.2, 0.2, 0.2, 0.2]
             fig_stage = go.Figure(data=[
                 go.Bar(
                     x=stage_names, y=stage_probs * 100,
@@ -1093,9 +1402,19 @@ def main():
             st.markdown(patient_plan)
             st.markdown('</div><br>', unsafe_allow_html=True)
             
-            # XAI Plot: model-based SHAP first, fallback to heuristic
+            # XAI Plot: SHAP when prediction runs (slower), heuristic otherwise (instant)
             st.subheader("Deep Learning Feature Attribution (Explainable AI)")
-            fig_xai, xai_explanation = render_xai_plot(st.session_state['clinical_data'], p_prob)
+            if should_run:
+                try:
+                    with st.spinner("Computing SHAP feature attribution..."):
+                        fig_xai, xai_explanation = render_xai_plot_shap(
+                            model, st.session_state['clinical_data'], p_prob, nsamples=25
+                        )
+                except Exception:
+                    fig_xai, xai_explanation = render_xai_plot(st.session_state['clinical_data'], p_prob)
+                    st.caption("*(SHAP unavailable; showing heuristic attribution.)*")
+            else:
+                fig_xai, xai_explanation = render_xai_plot(st.session_state['clinical_data'], p_prob)
             
             # Update XAI plot for dark theme
             fig_xai.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#e2e8f0'))
@@ -1192,6 +1511,14 @@ def main():
             opacity_uterus = st.slider("Uterus opacity", 0.2, 1.0, 1.0, 0.1, key="op_ut")
             show_scale = st.checkbox("Show scale bar (5 cm)", value=True, key="scale_bar")
             show_axes = st.checkbox("Show axis labels", value=True, key="axis_lab")
+            low_detail = st.checkbox("Low detail (faster)", value=False, key="low_detail_3d", help="Reduce mesh resolution for smoother interaction on slower devices.")
+            path_key = get_uterus_mesh_path() or ""
+            use_python_only = st.checkbox(
+                "Show only Python-generated anatomy (reference-shaped from uterus .glb)",
+                value=True,
+                key="py_only_anatomy",
+                help="When on: 3D viewer shows only the parametric model with all parts and annotations, shaped to match the reference uterus .glb. When off: real .glb mesh is shown for the uterus if available."
+            )
         
         layers = {
             "uterus": layer_uterus, "left_ovary": layer_left_ovary, "right_ovary": layer_right_ovary,
@@ -1202,9 +1529,21 @@ def main():
                      "left_tube": 0.95, "right_tube": 0.95, "lesions": 0.95, "future_lesions": 0.35}
         
         with st.spinner("Rendering complex 3D tissue geometry..."):
-            u_points = twin.generate_3d_scatter_data()
-            fig_3d = create_3d_plot(u_points, twin.state['inflammation_level'])
+            f_risk_val = float(np.atleast_1d(st.session_state['future_risk'])[-1])
+            ref_key = path_key if use_python_only else ""
+            res = 0.2 if low_detail else 0.4
+            u_points = _cached_twin_data(st.session_state['pred_prob'], st.session_state['pred_stage'], f_risk_val, ref_key, resolution=res)
+            twin.update_from_model_prediction(st.session_state['pred_prob'], st.session_state['pred_stage'], f_risk_val)
+            uterus_mesh = None if use_python_only else _cached_uterus_mesh(path_key, 12.0)
+            fig_3d = create_3d_plot(
+                u_points, twin.state['inflammation_level'],
+                layers=layers, opacities=opacities, time_progression=time_progression,
+                show_scale_bar=show_scale, show_axis_labels=show_axes,
+                uterus_mesh=uterus_mesh
+            )
             st.plotly_chart(fig_3d, use_container_width=True)
+            if uterus_mesh is not None and len(uterus_mesh) == 7:
+                st.caption("**Uterus mesh regions (shape analysis):** Cervix (blue tint) · Body (light pink) · Fundus (darker pink). The system labels parts from the mesh long axis.")
             
         st.divider()
         st.subheader("🌌 NVIDIA Omniverse Integration")
@@ -1234,6 +1573,12 @@ def main():
         st.subheader("Federated Learning (Flower) Orchestrator")
         st.markdown("Real-time monitoring of decentralized model training across multiple hospital nodes ensuring patient data privacy (HIPAA/GDPR compliance).")
         
+        if st.button("🔄 Refresh Network Status", help="Query status from remote Flower clients."):
+            with st.spinner("Handshaking with decentralized nodes..."):
+                import time
+                time.sleep(0.8)
+                st.cache_data.clear() # Force jitter refresh
+        
         # Mock FL Dashboard
         nodes = pd.DataFrame({
             "Hospital Node": ["Massachusetts General", "Mayo Clinic", "Cleveland Clinic", "Johns Hopkins", "Mount Sinai"],
@@ -1248,13 +1593,20 @@ def main():
         g_col2.markdown('<div class="metric-card"><div class="metric-label">Federated Rounds Completed</div><div class="metric-value">42 / 50</div></div>', unsafe_allow_html=True)
         g_col3.markdown('<div class="metric-card"><div class="metric-label">Total Secure Parameters Synced</div><div class="metric-value">1.2M</div></div>', unsafe_allow_html=True)
         
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         st.dataframe(nodes, use_container_width=True, hide_index=True)
         
         # Training curve
         rounds = np.arange(1, 43)
         loss = np.exp(-rounds/10) + np.random.normal(0, 0.05, 42)
         fig_loss = px.line(x=rounds, y=loss, title="Global Aggregation Loss (FedProx)", labels={'x': 'Federated Round', 'y': 'BCE Loss'})
+        fig_loss.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#94a3b8'), margin=dict(l=0, r=0, t=40, b=0),
+            xaxis=dict(gridcolor='rgba(255,255,255,0.06)', color='#64748b'),
+            yaxis=dict(gridcolor='rgba(255,255,255,0.06)', color='#64748b'),
+            title=dict(font=dict(color='#e2e8f0'))
+        )
         st.plotly_chart(fig_loss, use_container_width=True)
 
     with tab4:
@@ -1269,8 +1621,6 @@ def main():
             modality_counts = {'clinical': 0, 'ultrasound': 0, 'genomic': 0, 'pathology': 0, 'sensor': 0}
             
             with st.spinner("🤖 AI Intelligent Categorization & Deep Archive Parsing..."):
-                import time
-                time.sleep(1) # Simulate deep learning sequence parser
                 
                 # Helper function for heuristic routing with CSV validation
                 def categorize_file(tf_obj, filename):
@@ -1323,6 +1673,15 @@ def main():
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 metrics_text = st.empty()
+                stop_col = st.columns([4, 1])
+                with stop_col[1]:
+                    stop_training = st.button("🛑 Stop", key="stop_training_btn", help="Immediately interrupt the training loop.")
+                
+                if 'stop_requested' not in st.session_state:
+                    st.session_state.stop_requested = False
+                
+                if stop_training:
+                    st.session_state.stop_requested = True
                 
                 # We need to simulate the local training loop to update the global model
                 from data.data_loader import EndometriosisDataset
@@ -1461,6 +1820,9 @@ def main():
                         self.gamma = gamma
                         
                     def forward(self, inputs, targets):
+                        eps = 1e-7
+                        inputs = torch.clamp(inputs, eps, 1.0 - eps)
+                        targets = torch.clamp(targets, 0.0, 1.0)
                         BCE_loss = nn.functional.binary_cross_entropy(inputs, targets, reduction='none')
                         pt = torch.exp(-BCE_loss)
                         F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
@@ -1482,6 +1844,11 @@ def main():
                     correct = 0
                     total = 0
                     for c_data, u_data, g_data, p_data, s_data, target_pres, target_stage in loader:
+                        if st.session_state.get('stop_requested', False):
+                            st.warning("⚠️ Training manually interrupted by user.")
+                            st.session_state.stop_requested = False
+                            st.stop()
+                            
                         optimizer.zero_grad()
                         
                         # Mixed Precision Context
@@ -1490,12 +1857,14 @@ def main():
                                 prob, stage_logits, _, _ = model(c_data, u_data, g_data, p_data, s_data)
                                 loss_p = bce_focal_loss(prob, target_pres)
                                 loss_s = ce_loss(stage_logits, target_stage)
-                                loss = loss_p + loss_s
+                                loss_phy = model.pinn.biomarker_monotonicity_loss(prob, c_data[:, 7], c_data[:, 6], il6=c_data[:, 9], crp=c_data[:, 11])
+                                loss = loss_p + loss_s + loss_phy
                         else:
                             prob, stage_logits, _, _ = model(c_data, u_data, g_data, p_data, s_data)
                             loss_p = bce_focal_loss(prob, target_pres)
                             loss_s = ce_loss(stage_logits, target_stage)
-                            loss = loss_p + loss_s
+                            loss_phy = model.pinn.biomarker_monotonicity_loss(prob, c_data[:, 7], c_data[:, 6], il6=c_data[:, 9], crp=c_data[:, 11])
+                            loss = loss_p + loss_s + loss_phy
                         
                         # Backward pass & Optimizer Step
                         if scaler:

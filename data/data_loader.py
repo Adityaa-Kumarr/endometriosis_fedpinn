@@ -75,9 +75,19 @@ def load_client_data(client_id, batch_size=32, data_dir="dataset/clients", test_
     client_path = os.path.join(data_dir, f"client_{client_id}")
     
     # Load data
-    df = pd.read_csv(os.path.join(client_path, "clinical.csv"))
-    us_embeddings = np.load(os.path.join(client_path, "us_embeddings.npy"))
+    clinical_path = os.path.join(client_path, "clinical.csv")
+    if not os.path.isfile(clinical_path):
+        raise FileNotFoundError(f"Client {client_id} data not found: {clinical_path}. Run: python data/synthetic_generator.py")
+    df = pd.read_csv(clinical_path)
     n_rows = len(df)
+    
+    us_path = os.path.join(client_path, "us_embeddings.npy")
+    if os.path.isfile(us_path):
+        us_embeddings = np.load(us_path)
+        if len(us_embeddings) != n_rows:
+            raise ValueError(f"us_embeddings.npy has {len(us_embeddings)} rows but clinical.csv has {n_rows}. Row counts must match.")
+    else:
+        us_embeddings = np.zeros((n_rows, 128), dtype=np.float32)
     genomic = _load_optional_embeddings(client_path, "genomic_data.npy", n_rows)
     pathology = _load_optional_embeddings(client_path, "pathology_data.npy", n_rows)
     sensor = _load_optional_embeddings(client_path, "sensor_data.npy", n_rows)
@@ -129,8 +139,9 @@ def load_client_data(client_id, batch_size=32, data_dir="dataset/clients", test_
         _slice(genomic, test_idx), _slice(pathology, test_idx), _slice(sensor, test_idx)
     )
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    nw = 0 if os.name == 'nt' else 4
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=nw, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=nw, pin_memory=True)
     
     return train_loader, test_loader, scaler
 

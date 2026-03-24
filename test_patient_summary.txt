@@ -1,0 +1,29 @@
+### PATIENT CLINICAL SUMMARY - CASE #1 (POSITIVE)
+-----------------------------------------------
+Patient ID: TEST-001
+Age: 28 | BMI: 22.5
+Symptoms: Severe pelvic pain (8/10), Dysmenorrhea (9/10), Dyspareunia (Yes)
+Family History: Positive (Mother/Sister)
+
+Biomarkers:
+- CA-125: 65.2 U/mL (Elevated)
+- Estradiol: 180.5 pg/mL
+- Progesterone: 4.2 ng/mL (Low)
+
+Clinical Assessment:
+High probability of Stage III Moderate Endometriosis. Lesion seeding suspected in ovaries based on chronic biomarker elevation.
+
+### PATIENT CLINICAL SUMMARY - CASE #2 (NEGATIVE)
+-----------------------------------------------
+Patient ID: TEST-002
+Age: 34 | BMI: 26.1
+Symptoms: Mild pelvic pain (2/10), Dysmenorrhea (None/1/10)
+Family History: Negative
+
+Biomarkers:
+- CA-125: 12.5 U/mL (Normal < 35)
+- Estradiol: 95.0 pg/mL
+- Progesterone: 15.2 ng/mL (Normal)
+
+Clinical Assessment:
+Negative for active endometriosis. Pain likely unrelated to uterine adhesions or lesion growth.
