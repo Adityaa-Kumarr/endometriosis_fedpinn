@@ -35,7 +35,7 @@ endometriosis_fedpinn/
 
 ## 📊 Endometriosis Digital Twin Dataset Collection
 
-**Prepared by:** chengalva yamini  
+**Prepared by:** Akash Kr 
 **Objective:** This collection of medical datasets was carefully chosen to support the development of the Digital Twin system. The goal is to help detect endometriosis at an early stage and provide personalized insights for better understanding and treatment of the condition in women.
 
 ### Primary Datasets Utilized
