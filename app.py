@@ -165,94 +165,217 @@ def _read_json_robust(uploaded_file):
     except (ValueError, TypeError):
         pass
     return None
+st.set_page_config(page_title="EndoPINN — Clinical AI Research Platform", layout="wide", page_icon="🔬")
 
-st.set_page_config(page_title="AI Endometriosis Predictor", layout="wide", page_icon="🧬")
-
-# Premium Glassmorphism & Dark Mode CSS
+# Medical-Grade Dark Theme CSS
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
-    /* Dark Theme Background */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+
+    /* ── App Background ── */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-        color: #e2e8f0;
+        background: linear-gradient(160deg, #050d1a 0%, #0a1628 50%, #080f20 100%);
+        color: #dde6f0;
     }
-    /* Typography */
-    .main-header { 
-        font-size: clamp(1.8rem, 4vw, 3rem); 
-        font-weight: 800; 
-        background: -webkit-linear-gradient(45deg, #E83E8C, #8b5cf6, #3b82f6);
+
+    /* ── Main Header ── */
+    .main-header {
+        font-size: clamp(1.7rem, 4vw, 2.7rem);
+        font-weight: 800;
+        background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 40%, #818cf8 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 0px; 
+        background-clip: text;
         text-align: center;
+        margin-bottom: 4px;
+        letter-spacing: -0.4px;
+        line-height: 1.2;
     }
-    .sub-header { 
-        font-size: clamp(1rem, 2vw, 1.2rem); 
-        color: #94a3b8; 
-        margin-bottom: 30px; 
+    .sub-header {
+        font-size: clamp(0.82rem, 1.8vw, 1rem);
+        color: #475569;
         text-align: center;
-        font-weight: 300;
+        margin-bottom: 26px;
+        font-weight: 400;
+        letter-spacing: 0.04em;
     }
-    h1, h2, h3, h4, h5, h6, .stMarkdown p {
-        color: #f8fafc !important;
-    }
-    /* Glassmorphism Cards */
-    .metric-card { 
-        background: rgba(255, 255, 255, 0.04);
+
+    /* ── Fix: NO !important on h tags — preserves Streamlit widget labels ── */
+    h1, h2, h3, h4, h5, h6 { color: #e2e8f0; }
+    .stMarkdown p { color: #b8c5d3; }
+
+    /* ── Metric / Glass Cards ── */
+    .metric-card {
+        background: rgba(14, 165, 233, 0.05);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 24px; 
-        border-radius: 16px; 
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4); 
-        text-align: center; 
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(14, 165, 233, 0.15);
+        padding: 20px 22px;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        text-align: center;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        will-change: transform;
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
     .metric-card:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 16px 48px 0 rgba(232, 62, 140, 0.25);
-        border-color: rgba(232, 62, 140, 0.4);
-        background: rgba(255, 255, 255, 0.06);
+        transform: translateY(-5px);
+        box-shadow: 0 12px 36px rgba(14,165,233,0.18);
+        border-color: rgba(14,165,233,0.4);
     }
-    .metric-value { 
-        font-size: clamp(1.5rem, 3vw, 2.5rem); 
-        font-weight: 800; 
-        color: #f8fafc; 
-        text-shadow: 0px 0px 10px rgba(255,255,255,0.2);
+    .metric-value {
+        font-size: clamp(1.4rem, 3vw, 2.2rem);
+        font-weight: 800;
+        color: #f1f5f9;
         line-height: 1.2;
     }
-    .metric-label { 
-        font-size: 1rem; 
-        color: #94a3b8; 
-        font-weight: 600; 
+    .metric-label {
+        font-size: 0.68rem;
+        color: #475569;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 10px;
+        letter-spacing: 1.3px;
+        margin-bottom: 7px;
     }
-    /* Customising Expander/Tabs for Dark Mode */
+
+    /* ── Section Cards ── */
+    .section-card {
+        background: rgba(255,255,255,0.025);
+        border: 1px solid rgba(255,255,255,0.065);
+        border-radius: 12px;
+        padding: 17px 19px;
+        margin-bottom: 14px;
+    }
+    .section-card-blue   { border-left: 3px solid #0ea5e9; }
+    .section-card-violet { border-left: 3px solid #6366f1; }
+    .section-card-amber  { border-left: 3px solid #f59e0b; }
+    .section-card-red    { border-left: 3px solid #ef4444; }
+    .section-card-green  { border-left: 3px solid #10b981; }
+
+    /* ── Input Group Headers ── */
+    .input-group-header {
+        font-size: 0.67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #0ea5e9;
+        margin-bottom: 10px;
+        padding-bottom: 7px;
+        border-bottom: 1px solid rgba(14,165,233,0.12);
+    }
+
+    /* ── Medical Disclaimer ── */
+    .medical-disclaimer {
+        background: rgba(245,158,11,0.07);
+        border: 1px solid rgba(245,158,11,0.28);
+        border-left: 4px solid #f59e0b;
+        padding: 13px 17px;
+        border-radius: 10px;
+        color: #fde68a;
+        font-size: 0.8rem;
+        line-height: 1.65;
+        margin: 13px 0;
+    }
+    .medical-disclaimer strong { color: #fbbf24; }
+
+    /* ── Risk Tags ── */
+    .risk-tag { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+    .risk-low      { background: rgba(16,185,129,0.13); color: #34d399; border: 1px solid rgba(16,185,129,0.27); }
+    .risk-moderate { background: rgba(245,158,11,0.13); color: #fbbf24; border: 1px solid rgba(245,158,11,0.27); }
+    .risk-high     { background: rgba(249,115,22,0.13); color: #fb923c; border: 1px solid rgba(249,115,22,0.27); }
+    .risk-severe   { background: rgba(239,68,68,0.13);  color: #f87171; border: 1px solid rgba(239,68,68,0.27);  }
+
+    /* ── Status Badges (FL nodes) ── */
+    .status-synced   { color: #34d399; font-weight: 600; }
+    .status-training { color: #fbbf24; font-weight: 600; }
+    .status-offline  { color: #f87171; font-weight: 600; }
+
+    /* ── Sidebar Branding ── */
+    .sidebar-brand {
+        text-align: center; padding: 16px 8px 18px;
+        border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 14px;
+    }
+    .sidebar-brand .brand-icon  { font-size: 2rem; line-height: 1; }
+    .sidebar-brand .brand-title { font-size: 0.9rem; font-weight: 700; color: #38bdf8; line-height: 1.4; margin-top: 8px; }
+    .sidebar-brand .brand-version { font-size: 0.6rem; color: #1e3a5f; font-family: monospace; margin-top: 2px; }
+    .sidebar-disclaimer {
+        background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.18);
+        border-radius: 8px; padding: 9px 11px; font-size: 0.68rem;
+        color: #fca5a5; line-height: 1.55; margin-bottom: 14px; text-align: center;
+    }
+    .session-info-card {
+        background: rgba(14,165,233,0.04); border: 1px solid rgba(14,165,233,0.09);
+        border-radius: 8px; padding: 11px 13px; font-size: 0.72rem; color: #94a3b8; margin-bottom: 12px;
+    }
+    .session-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .session-row:last-child { border-bottom: none; }
+    .session-label { color: #334155; font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.8px; }
+    .session-value { color: #cbd5e1; font-weight: 600; font-family: monospace; font-size: 0.7rem; }
+
+    /* ── Tabs ── */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 3px; background: rgba(255,255,255,0.02);
+        border-radius: 10px; padding: 4px;
+        border: 1px solid rgba(255,255,255,0.05);
+        margin-bottom: 4px;
     }
     .stTabs [data-baseweb="tab"] {
-        background-color: rgba(255, 255, 255, 0.05);
-        border-radius: 8px 8px 0px 0px;
-        color: #cbd5e1;
-        padding: 10px 20px;
+        background-color: transparent; border-radius: 7px;
+        color: #475569; padding: 8px 15px; font-size: 0.82rem; font-weight: 500;
+        transition: all 0.2s ease;
     }
+    .stTabs [data-baseweb="tab"]:hover { background-color: rgba(14,165,233,0.07); color: #94a3b8; }
     .stTabs [aria-selected="true"] {
-        background-color: rgba(232, 62, 140, 0.2) !important;
-        border-bottom: 3px solid #E83E8C !important;
-        color: #f8fafc !important;
-        font-weight: 600;
+        background-color: rgba(14,165,233,0.13) !important;
+        border-bottom: 2px solid #0ea5e9 !important;
+        color: #38bdf8 !important; font-weight: 700;
+    }
+
+    /* ── Primary CTA Button ── */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #0369a1, #0ea5e9) !important;
+        border: none !important; border-radius: 10px !important;
+        font-weight: 700 !important; letter-spacing: 0.3px !important;
+        box-shadow: 0 4px 16px rgba(14,165,233,0.28) !important;
+        transition: all 0.2s ease !important; width: 100%;
+    }
+    .stButton > button[kind="primary"]:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 28px rgba(14,165,233,0.38) !important;
+    }
+
+    /* ── Sidebar background ── */
+    .stSidebar { background: linear-gradient(180deg, #06101e 0%, #08131f 100%); }
+
+    /* ── Future Risk Card ── */
+    .future-risk-card {
+        background: linear-gradient(135deg, rgba(99,102,241,0.07), rgba(14,165,233,0.05));
+        border: 1px solid rgba(99,102,241,0.17); border-radius: 12px;
+        padding: 17px 19px; margin-bottom: 14px;
+    }
+    .future-risk-title {
+        font-size: 0.66rem; text-transform: uppercase; letter-spacing: 1.3px;
+        color: #818cf8; font-weight: 700; margin-bottom: 10px;
+    }
+
+    /* ── Responsive Breakpoints ── */
+    @media (max-width: 768px) {
+        .metric-card  { padding: 14px; }
+        .metric-value { font-size: 1.35rem; }
+        .section-card { padding: 13px; }
+        .stTabs [data-baseweb="tab"] { padding: 7px 9px; font-size: 0.73rem; }
+        .main-header  { font-size: 1.55rem; }
+        .sub-header   { font-size: 0.8rem; }
+    }
+    @media (max-width: 480px) {
+        .main-header { font-size: 1.2rem; }
+        .metric-card { padding: 11px; }
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 @st.cache_resource(show_spinner=False)
 def _get_image_encoder():
@@ -373,12 +496,34 @@ def create_3d_plot(twin_data, inflammation_level, layers=None, opacities=None, t
                     ))
             else:
                 u_x, u_y, u_z = ut
-                colorscale_u = [[0, 'rgb(255, 210, 215)'], [1, f'rgb(255, {int(150 - inflammation_level*120)}, {int(150 - inflammation_level*120)})']]
+                colorscale_u = [[0, 'rgb(255, 180, 190)'], [0.5, 'rgb(255, 120, 130)'], [1, f'rgb(255, {int(80 - inflammation_level*60)}, {int(80 - inflammation_level*60)})']]
                 fig.add_trace(go.Surface(
                     x=u_x, y=u_y, z=u_z,
                     opacity=_op('uterus', 1.0), colorscale=colorscale_u, showscale=False, name='Uterus Body',
                     lighting=lighting_props, hoverinfo='name', hovertemplate='Uterus Tissue<extra></extra>'
                 ))
+                
+                # Cervix (New in V3)
+                if 'cervix' in twin_data:
+                    c_x, c_y, c_z = twin_data['cervix']
+                    fig.add_trace(go.Surface(
+                        x=c_x, y=c_y, z=c_z,
+                        opacity=_op('uterus', 1.0), colorscale=[[0, 'rgb(255,200,210)'], [1, 'rgb(255,160,170)']], 
+                        showscale=False, name='Cervix',
+                        lighting=lighting_props, hoverinfo='name', hovertemplate='Cervix<extra></extra>'
+                    ))
+
+                # Broad Ligaments (New in V3)
+                for side, key in [('Left', 'broad_ligament_l'), ('Right', 'broad_ligament_r')]:
+                    if key in twin_data:
+                        l_x, l_y, l_z = twin_data[key]
+                        fig.add_trace(go.Surface(
+                            x=l_x, y=l_y, z=l_z,
+                            opacity=0.35, colorscale=[[0, 'rgb(255,220,230)'], [1, 'rgb(255,220,230)']], 
+                            showscale=False, name=f'{side} Broad Ligament',
+                            lighting=dict(ambient=0.6, diffuse=0.4), hoverinfo='name',
+                            hovertemplate=f'{side} Broad Ligament<extra></extra>'
+                        ))
 
     
     # Ovaries (reference: lighter, off-white / creamy vs reddish-pink uterus and tubes)
@@ -830,8 +975,19 @@ def generate_health_recommendations(clinical_data, p_prob):
     return plan
 
 def main():
-    st.markdown('<p class="main-header">🧬 Federated Digital Twin for Endometriosis Forecast</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Advanced multi-modal prediction using Adaptive FedPINN, XAI, and 3D UI Mesh Simulation.</p>', unsafe_allow_html=True)
+    try:
+        _run_main()
+    except Exception as e:
+        import traceback
+        st.error(f"🚨 APPLICATION CRASHED DURING RENDER: {e}")
+        st.code(traceback.format_exc(), language="python")
+
+def _run_main():
+    # ── Hero Header ──────────────────────────────────────────────────────────
+    st.markdown('''
+    <p class="main-header">🔬 EndoPINN Clinical AI</p>
+    <p class="sub-header">Federated Physics-Informed Neural Network · Endometriosis Research Platform · v2.0</p>
+    ''', unsafe_allow_html=True)
     
     # Defensive session_state init so Tab2 (3D Twin) and Tab3 (FL) never KeyError if user opens them before prediction runs
     defaults = {
@@ -845,9 +1001,35 @@ def main():
         if k not in st.session_state:
             st.session_state[k] = v
 
-    # Sidebar: clear results to free memory and reset for new patient (preserve model cache for speed)
+    # ── Sidebar ──────────────────────────────────────────────────────────────
     with st.sidebar:
-        if st.button("🔄 Clear results / New patient", help="Clear prediction state and reset for new patient."):
+        # Branding
+        st.markdown('''
+        <div class="sidebar-brand">
+            <div class="brand-icon">🔬</div>
+            <div class="brand-title">EndoPINN AI</div>
+            <div class="brand-version">v2.0 · Research Build · FedPINN</div>
+        </div>
+        <div class="sidebar-disclaimer">
+            ⚠️ <strong>RESEARCH USE ONLY</strong><br>
+            Not a medical diagnosis. For clinical decisions, consult a qualified gynecologist.
+        </div>
+        ''', unsafe_allow_html=True)
+
+        # Session state info
+        pred_prob_display = f"{st.session_state.get('pred_prob', 0.0)*100:.1f}%"
+        pred_stage_display = ["None","Stage I","Stage II","Stage III","Stage IV"][st.session_state.get('pred_stage', 0)]
+        computed = "✅ Yes" if st.session_state.get('prediction_computed') else "⏳ Pending"
+        st.markdown(f'''
+        <div class="session-info-card">
+            <div class="session-row"><span class="session-label">Risk Score</span><span class="session-value">{pred_prob_display}</span></div>
+            <div class="session-row"><span class="session-label">Est. Stage</span><span class="session-value">{pred_stage_display}</span></div>
+            <div class="session-row"><span class="session-label">Computed</span><span class="session-value">{computed}</span></div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+        st.markdown("---")
+        if st.button("🔄 New Patient / Reset", help="Clear prediction state and reset for new patient.", use_container_width=True):
             for key in list(st.session_state.keys()):
                 if key in ('pred_prob', 'pred_prob_std', 'pred_stage', 'future_risk', 'gate_probs', 'clinical_data', 'us_embedding_from_image', 'prediction_computed', 'last_computed_clinical_data'):
                     del st.session_state[key]
@@ -858,13 +1040,13 @@ def main():
     twin = UterusDigitalTwin()
     
     # Tabs layout
-    tab1, tab2, tab3, tab4 = st.tabs(["🩺 Patient Evaluation & Analysis", "🧊 3D Digital Twin Viewer", "🌐 Federated Network Status", "🚀 Custom Model Training"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🩺 Patient Evaluation", "🧊 3D Digital Twin", "🌐 Federated Network", "🚀 Model Training"])
     
     with tab1:
         col_input, col_results = st.columns([1, 2])
         
         with col_input:
-            st.subheader("Patient Report Upload")
+            st.markdown('<div class="input-group-header">📂 Patient Report Upload</div>', unsafe_allow_html=True)
             # Image types: include common + medical (PIL-readable: bmp, tiff, tif, gif)
             _IMAGE_EXTENSIONS = ('png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff', 'tif', 'gif')
             uploaded_file = st.file_uploader(
@@ -996,7 +1178,7 @@ def main():
                 except Exception as e:
                     st.error(f"Error parsing file: {e}")
 
-            st.subheader("Clinical Parameters")
+            st.markdown('<div class="input-group-header">👤 Clinical Parameters</div>', unsafe_allow_html=True)
             
             # Use clamping to ensure extracted defaults never break the Streamlit UI limits
             age = st.slider("Age", 0, 100, min(100, max(0, int(default_vals['age']))))
@@ -1010,13 +1192,13 @@ def main():
             with col_b:
                 fam_hx = st.selectbox("Family History", [0, 1], format_func=lambda x: "Yes" if x else "No", index=int(default_vals['fam_hx']))
                 
-            st.subheader("Biomarkers & Hormones")
+            st.markdown('<div class="input-group-header">🧪 Biomarkers & Hormones</div>', unsafe_allow_html=True)
             cycle_phase = st.selectbox("Menstrual Cycle Phase", list(CYCLE_PHASE_RANGES.keys()), index=3)
             ca125 = st.slider("CA-125 (U/mL)", 0.0, 1000.0, min(1000.0, max(0.0, float(default_vals['ca125']))))
             estradiol = st.slider("Estradiol (pg/mL)", 0.0, 2000.0, min(2000.0, max(0.0, float(default_vals['estradiol']))))
             prog = st.slider("Progesterone (ng/mL)", 0.0, 200.0, min(200.0, max(0.0, float(default_vals['progesterone']))))
             
-            st.subheader("Advanced Inflammatory Markers")
+            st.markdown('<div class="input-group-header">🔬 Advanced Inflammatory Markers</div>', unsafe_allow_html=True)
             il6 = st.slider("IL-6 (pg/mL)", 0.0, 500.0, min(500.0, max(0.0, float(default_vals['il6']))))
             amh = st.slider("AMH (ng/mL)", 0.0, 25.0, min(25.0, max(0.0, float(default_vals['amh']))))
             crp = st.slider("CRP (mg/L)", 0.0, 300.0, min(300.0, max(0.0, float(default_vals['crp']))))
@@ -1045,8 +1227,8 @@ def main():
             
             clinical_data = np.array([[age, bmi, pelvic_pain, dysmenorrhea, dyspareunia, fam_hx, ca125, estradiol, prog, il6, amh, crp]])
             
-            run_prediction = st.button("▶️ Run prediction", type="primary", help="Compute risk score and XAI attribution. Click after adjusting parameters.")
-            st.caption("✨ Adjust parameters above, then click Run prediction to compute results without freezing UI.")
+            run_prediction = st.button("▶️ Run Prediction", type="primary", use_container_width=True, help="Compute risk score and XAI attribution. Click after adjusting parameters.")
+            st.caption("Adjust parameters above, then click Run Prediction. Results update in the panel on the right.")
 
         with col_results:
             should_run = run_prediction or not st.session_state.get('prediction_computed', False)
@@ -1093,7 +1275,7 @@ def main():
                         
                         if not os.path.exists('global_model.pth'):
                             st.error("🚨 **No trained global model found!** Please ensure you have completed at least one federated learning round (from the clients) before running predictions.")
-                            st.stop()
+                            pass
                         prob = torch.tensor([[mean_p]])
                     st.session_state['pred_prob'] = prob.item()
                     st.session_state['pred_prob_std'] = std_p
@@ -1411,13 +1593,20 @@ def main():
         g_col2.markdown('<div class="metric-card"><div class="metric-label">Federated Rounds Completed</div><div class="metric-value">42 / 50</div></div>', unsafe_allow_html=True)
         g_col3.markdown('<div class="metric-card"><div class="metric-label">Total Secure Parameters Synced</div><div class="metric-value">1.2M</div></div>', unsafe_allow_html=True)
         
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         st.dataframe(nodes, use_container_width=True, hide_index=True)
         
         # Training curve
         rounds = np.arange(1, 43)
         loss = np.exp(-rounds/10) + np.random.normal(0, 0.05, 42)
         fig_loss = px.line(x=rounds, y=loss, title="Global Aggregation Loss (FedProx)", labels={'x': 'Federated Round', 'y': 'BCE Loss'})
+        fig_loss.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#94a3b8'), margin=dict(l=0, r=0, t=40, b=0),
+            xaxis=dict(gridcolor='rgba(255,255,255,0.06)', color='#64748b'),
+            yaxis=dict(gridcolor='rgba(255,255,255,0.06)', color='#64748b'),
+            title=dict(font=dict(color='#e2e8f0'))
+        )
         st.plotly_chart(fig_loss, use_container_width=True)
 
     with tab4:
