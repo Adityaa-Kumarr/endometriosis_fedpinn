@@ -1,130 +1,197 @@
 {
-  "root": "H:\\Akash\\DT\\endometriosis_fedpinn\\dataset",
+  "root": "/Users/adityakumar/.gemini/antigravity/scratch/endometriosis_fedpinn/dataset",
   "data_types_available": [
-    "clinical",
-    "ultrasound"
+    "pathology",
+    "sensor",
+    "genomic",
+    "ultrasound",
+    "clinical"
   ],
   "by_data_type": {
-    "clinical": [
+    "pathology": [
       {
-        "path": "clinical_hormonal_data.csv",
-        "format": "csv",
-        "clinical_ready": true,
-        "shape_or_rows": "columns: 12",
-        "columns_sample": [
-          "patient_id",
-          "age",
-          "bmi",
-          "pelvic_pain_score",
-          "dysmenorrhea_score",
-          "dyspareunia",
-          "family_history",
-          "ca125",
-          "estradiol",
-          "progesterone",
-          "stage",
-          "label"
-        ]
+        "path": "pathology_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          2500,
+          64
+        ],
+        "columns_sample": null
       },
       {
-        "path": "clients/client_1/clinical.csv",
-        "format": "csv",
-        "clinical_ready": true,
-        "shape_or_rows": "columns: 12",
-        "columns_sample": [
-          "patient_id",
-          "age",
-          "bmi",
-          "pelvic_pain_score",
-          "dysmenorrhea_score",
-          "dyspareunia",
-          "family_history",
-          "ca125",
-          "estradiol",
-          "progesterone",
-          "stage",
-          "label"
-        ]
+        "path": "clients/client_1/pathology_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          64
+        ],
+        "columns_sample": null
       },
       {
-        "path": "clients/client_2/clinical.csv",
-        "format": "csv",
-        "clinical_ready": true,
-        "shape_or_rows": "columns: 12",
-        "columns_sample": [
-          "patient_id",
-          "age",
-          "bmi",
-          "pelvic_pain_score",
-          "dysmenorrhea_score",
-          "dyspareunia",
-          "family_history",
-          "ca125",
-          "estradiol",
-          "progesterone",
-          "stage",
-          "label"
-        ]
+        "path": "clients/client_3/pathology_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          64
+        ],
+        "columns_sample": null
       },
       {
-        "path": "clients/client_3/clinical.csv",
-        "format": "csv",
-        "clinical_ready": true,
-        "shape_or_rows": "columns: 12",
-        "columns_sample": [
-          "patient_id",
-          "age",
-          "bmi",
-          "pelvic_pain_score",
-          "dysmenorrhea_score",
-          "dyspareunia",
-          "family_history",
-          "ca125",
-          "estradiol",
-          "progesterone",
-          "stage",
-          "label"
-        ]
+        "path": "clients/client_4/pathology_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          64
+        ],
+        "columns_sample": null
       },
       {
-        "path": "clients/client_4/clinical.csv",
-        "format": "csv",
-        "clinical_ready": true,
-        "shape_or_rows": "columns: 12",
-        "columns_sample": [
-          "patient_id",
-          "age",
-          "bmi",
-          "pelvic_pain_score",
-          "dysmenorrhea_score",
-          "dyspareunia",
-          "family_history",
-          "ca125",
-          "estradiol",
-          "progesterone",
-          "stage",
-          "label"
-        ]
+        "path": "clients/client_5/pathology_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          64
+        ],
+        "columns_sample": null
       },
       {
-        "path": "clients/client_5/clinical.csv",
-        "format": "csv",
-        "clinical_ready": true,
-        "shape_or_rows": "columns: 12",
-        "columns_sample": [
-          "patient_id",
-          "age",
-          "bmi",
-          "pelvic_pain_score",
-          "dysmenorrhea_score",
-          "dyspareunia",
-          "family_history",
-          "ca125",
-          "estradiol",
-          "progesterone",
-          "stage",
-          "label"
-        ]
+        "path": "clients/client_2/pathology_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          64
+        ],
+        "columns_sample": null
+      }
+    ],
+    "sensor": [
+      {
+        "path": "sensor_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          2500,
+          32
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_1/sensor_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          32
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_3/sensor_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          32
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_4/sensor_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          32
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_5/sensor_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          32
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_2/sensor_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          32
+        ],
+        "columns_sample": null
+      }
+    ],
+    "genomic": [
+      {
+        "path": "genomic_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          2500,
+          256
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_1/genomic_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          256
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_3/genomic_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          256
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_4/genomic_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          256
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_5/genomic_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          256
+        ],
+        "columns_sample": null
+      },
+      {
+        "path": "clients/client_2/genomic_data.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          256
+        ],
+        "columns_sample": null
       }
     ],
     "ultrasound": [
@@ -140,16 +207,6 @@
       },
       {
         "path": "clients/client_1/us_embeddings.npy",
-        "format": "numpy",
-        "clinical_ready": null,
-        "shape_or_rows": [
-          500,
-          128
-        ],
-        "columns_sample": null
-      },
-      {
-        "path": "clients/client_2/us_embeddings.npy",
         "format": "numpy",
         "clinical_ready": null,
         "shape_or_rows": [
@@ -187,37 +244,190 @@
           128
         ],
         "columns_sample": null
+      },
+      {
+        "path": "clients/client_2/us_embeddings.npy",
+        "format": "numpy",
+        "clinical_ready": null,
+        "shape_or_rows": [
+          500,
+          128
+        ],
+        "columns_sample": null
+      }
+    ],
+    "clinical": [
+      {
+        "path": "clinical_hormonal_data.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "2500 rows, 12 columns",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_1/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "500 rows, 12 columns",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_3/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "500 rows, 12 columns",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_4/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "500 rows, 12 columns",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_5/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "500 rows, 12 columns",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
+      },
+      {
+        "path": "clients/client_2/clinical.csv",
+        "format": "csv",
+        "clinical_ready": true,
+        "shape_or_rows": "500 rows, 12 columns",
+        "columns_sample": [
+          "patient_id",
+          "age",
+          "bmi",
+          "pelvic_pain_score",
+          "dysmenorrhea_score",
+          "dyspareunia",
+          "family_history",
+          "ca125",
+          "estradiol",
+          "progesterone",
+          "stage",
+          "label"
+        ]
       }
     ]
   },
   "clinical_ready_files": [
     "clinical_hormonal_data.csv",
     "clients/client_1/clinical.csv",
-    "clients/client_2/clinical.csv",
     "clients/client_3/clinical.csv",
     "clients/client_4/clinical.csv",
-    "clients/client_5/clinical.csv"
+    "clients/client_5/clinical.csv",
+    "clients/client_2/clinical.csv"
   ],
   "supported_for_training": {
     "clinical": [
       "clinical_hormonal_data.csv",
       "clients/client_1/clinical.csv",
-      "clients/client_2/clinical.csv",
       "clients/client_3/clinical.csv",
       "clients/client_4/clinical.csv",
-      "clients/client_5/clinical.csv"
+      "clients/client_5/clinical.csv",
+      "clients/client_2/clinical.csv"
     ],
     "ultrasound": [
       "ultrasound_embeddings.npy",
       "clients/client_1/us_embeddings.npy",
-      "clients/client_2/us_embeddings.npy",
       "clients/client_3/us_embeddings.npy",
       "clients/client_4/us_embeddings.npy",
-      "clients/client_5/us_embeddings.npy"
+      "clients/client_5/us_embeddings.npy",
+      "clients/client_2/us_embeddings.npy"
     ],
-    "genomic": [],
-    "pathology": [],
-    "sensor": []
+    "genomic": [
+      "genomic_data.npy",
+      "clients/client_1/genomic_data.npy",
+      "clients/client_3/genomic_data.npy",
+      "clients/client_4/genomic_data.npy",
+      "clients/client_5/genomic_data.npy",
+      "clients/client_2/genomic_data.npy"
+    ],
+    "pathology": [
+      "pathology_data.npy",
+      "clients/client_1/pathology_data.npy",
+      "clients/client_3/pathology_data.npy",
+      "clients/client_4/pathology_data.npy",
+      "clients/client_5/pathology_data.npy",
+      "clients/client_2/pathology_data.npy"
+    ],
+    "sensor": [
+      "sensor_data.npy",
+      "clients/client_1/sensor_data.npy",
+      "clients/client_3/sensor_data.npy",
+      "clients/client_4/sensor_data.npy",
+      "clients/client_5/sensor_data.npy",
+      "clients/client_2/sensor_data.npy"
+    ]
   },
   "canonical_clinical_columns": [
     "age",
