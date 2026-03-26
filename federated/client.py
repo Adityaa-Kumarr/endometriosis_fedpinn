@@ -40,6 +40,12 @@ class EndometriosisClient(fl.client.NumPyClient):
         criterion_stage = nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.net.parameters(), lr=LR)
         
+        # Pre-allocate zero tensors for missing modalities
+        max_batch_size = max([len(b['clinical']) for b in self.train_loader] + [BATCH_SIZE])
+        self.genomic_zeros = torch.zeros((max_batch_size, 256), device=self.device)
+        self.pathology_zeros = torch.zeros((max_batch_size, 64), device=self.device)
+        self.sensor_zeros = torch.zeros((max_batch_size, 32), device=self.device)
+        
         self.net.train()
         for epoch in range(LOCAL_EPOCHS):
             for batch in self.train_loader:
@@ -48,21 +54,21 @@ class EndometriosisClient(fl.client.NumPyClient):
                 labels = batch['label'].to(self.device)
                 stages = batch['stage'].to(self.device).squeeze().long()
                 
-                optimizer.zero_grad()
+                # Use pre-allocated zeros dynamically resized via slices
+                bs = len(clinical)
                 prob, stage_logits, _, _ = self.net(clinical, us_data, 
-                    torch.zeros((len(clinical), 256)),  # genomic placeholder
-                    torch.zeros((len(clinical), 64)),   # pathology placeholder
-                    torch.zeros((len(clinical), 32))    # sensor placeholder
+                    self.genomic_zeros[:bs], 
+                    self.pathology_zeros[:bs], 
+                    self.sensor_zeros[:bs]
                 )
                 
                 # Losses
                 loss_prob = criterion_prob(prob, labels)
                 loss_stage = criterion_stage(stage_logits, stages)
                 
-                # Physics Loss Penalty
-                # Assuming index 7 is estradiol and 6 is ca125 in the normalized clinical array 
-                # (You would typically denormalize to get true physical constraints but this is demonstrative)
-                loss_phy = self.net.pinn.biomarker_monotonicity_loss(prob, clinical[:, 7], clinical[:, 6])
+                # Physics-Informed Monotonicity Penalty
+                # Indices mapping: [6]=CA125, [7]=Estradiol, [9]=IL-6, [11]=CRP 
+                loss_phy = self.net.pinn.biomarker_monotonicity_loss(prob, clinical[:, 7], clinical[:, 6], il6=clinical[:, 9], crp=clinical[:, 11])
                 
                 # Total loss
                 loss = loss_prob + loss_stage + loss_phy
@@ -80,15 +86,23 @@ class EndometriosisClient(fl.client.NumPyClient):
         correct = 0
         
         with torch.no_grad():
+            
+            # Pre-allocate zero tensors for missing modalities
+            max_batch_size = max([len(b['clinical']) for b in self.test_loader] + [BATCH_SIZE])
+            genomic_zeros = torch.zeros((max_batch_size, 256), device=self.device)
+            pathology_zeros = torch.zeros((max_batch_size, 64), device=self.device)
+            sensor_zeros = torch.zeros((max_batch_size, 32), device=self.device)
+            
             for batch in self.test_loader:
                 clinical = batch['clinical'].to(self.device)
                 us_data = batch['ultrasound'].to(self.device)
                 labels = batch['label'].to(self.device)
                 
+                bs = len(clinical)
                 prob, _, _, _ = self.net(clinical, us_data,
-                    torch.zeros((len(clinical), 256)),
-                    torch.zeros((len(clinical), 64)),
-                    torch.zeros((len(clinical), 32))
+                    genomic_zeros[:bs],
+                    pathology_zeros[:bs],
+                    sensor_zeros[:bs]
                 )
                 loss += criterion_prob(prob, labels).item()
                 
@@ -110,11 +124,27 @@ def start_client(client_id):
     data_dir = os.path.join(os.path.dirname(__file__), "..", "dataset", "clients")
     train_loader, test_loader, _ = load_client_data(client_id, batch_size=BATCH_SIZE, data_dir=data_dir)
     
-    # Start Client
-    fl.client.start_client(
-        server_address="127.0.0.1:8080",
-        client=EndometriosisClient(net, train_loader, test_loader).to_client(),
-    )
+    # Server address: use FLOWER_SERVER_URL in K8s (e.g. fedpinn-service:8080), else localhost
+    server_address = os.environ.get("FLOWER_SERVER_URL", "127.0.0.1:8080")
+    print(f"Connecting to server: {server_address}")
+    
+    # Retry connection when server may not be ready yet (e.g. K8s pod startup order)
+    max_retries = int(os.environ.get("FL_CLIENT_RETRIES", "12"))
+    retry_delay = int(os.environ.get("FL_CLIENT_RETRY_DELAY", "10"))
+    for attempt in range(max_retries):
+        try:
+            fl.client.start_client(
+                server_address=server_address,
+                client=EndometriosisClient(net, train_loader, test_loader).to_client(),
+            )
+            break
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"Connection attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {retry_delay}s...")
+                import time
+                time.sleep(retry_delay)
+            else:
+                raise
 
 if __name__ == "__main__":
     client_id = int(sys.argv[1]) if len(sys.argv) > 1 else 1
