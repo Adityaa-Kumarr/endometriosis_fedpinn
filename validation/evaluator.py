@@ -31,9 +31,9 @@ def evaluate_model(model, dataloader):
             all_probs.extend(prob_np)
             all_preds.extend(preds)
             
-    all_labels = np.array(all_labels).ravel()
-    all_probs = np.array(all_probs).ravel()
-    all_preds = np.array(all_preds).ravel()
+    all_labels = np.array(all_labels)
+    all_probs = np.array(all_probs)
+    all_preds = np.array(all_preds)
     
     metrics = {
         'accuracy': accuracy_score(all_labels, all_preds),

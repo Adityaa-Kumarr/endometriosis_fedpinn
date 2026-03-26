@@ -6,16 +6,6 @@ By combining Federated Learning (to preserve patient privacy), Physics-Informed 
 
 ---
 
-## 🎯 Project Goal
-
-Our objective is to build an intelligent, secure healthcare system where:
-1. **Kubernetes Pods** act as isolated federated nodes containing all relevant datasets for training.
-2. The core AI models are continuously and securely trained across these distributed datasets to generate highly accurate disease stage predictions.
-3. **Doctors and Clinicians** can upload patient medical records directly through the frontend dashboard interface.
-4. The system transparently processes these records, analyzes the medical reports, and produces personalized, explainable predictions and 3D visual results based entirely on the inputted patient data.
-
----
-
 ## 🌟 Key Features
 
 - **Federated Learning (Flower):** Train models across multiple hospital nodes without sharing raw patient data.
@@ -45,7 +35,7 @@ endometriosis_fedpinn/
 
 ## 📊 Endometriosis Digital Twin Dataset Collection
 
-**Prepared by:** Akash Kr 
+**Prepared by:** chengalva yamini  
 **Objective:** This collection of medical datasets was carefully chosen to support the development of the Digital Twin system. The goal is to help detect endometriosis at an early stage and provide personalized insights for better understanding and treatment of the condition in women.
 
 ### Primary Datasets Utilized

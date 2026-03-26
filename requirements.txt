@@ -9,7 +9,6 @@ shap
 lime
 streamlit
 plotly
-trimesh
 matplotlib
 seaborn
 Flask

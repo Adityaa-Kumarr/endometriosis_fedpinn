@@ -10,8 +10,6 @@ metadata:
     app: fedpinn-server
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: fedpinn-server
@@ -33,7 +31,7 @@ spec:
         resources:
           requests:
             memory: "512Mi"
-            cpu: "10m"
+            cpu: "250m"
           limits:
             memory: "1Gi"
             cpu: "1000m"
@@ -71,8 +69,6 @@ metadata:
     client-id: "1"
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: fedpinn-client
@@ -93,11 +89,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "10m"
+            memory: "1Gi"
+            cpu: "500m"
           limits:
-            memory: "1.5Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "2000m"
 ---
 # Client 2 — one pod, dataset = client_2
 apiVersion: apps/v1
@@ -109,8 +105,6 @@ metadata:
     client-id: "2"
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: fedpinn-client
@@ -131,11 +125,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "10m"
+            memory: "1Gi"
+            cpu: "500m"
           limits:
-            memory: "1.5Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "2000m"
 ---
 # Client 3 — one pod, dataset = client_3
 apiVersion: apps/v1
@@ -147,8 +141,6 @@ metadata:
     client-id: "3"
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: fedpinn-client
@@ -169,11 +161,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "10m"
+            memory: "1Gi"
+            cpu: "500m"
           limits:
-            memory: "1.5Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "2000m"
 ---
 # Client 4 — one pod, dataset = client_4
 apiVersion: apps/v1
@@ -185,8 +177,6 @@ metadata:
     client-id: "4"
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: fedpinn-client
@@ -207,11 +197,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "10m"
+            memory: "1Gi"
+            cpu: "500m"
           limits:
-            memory: "1.5Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "2000m"
 ---
 # Client 5 — one pod, dataset = client_5
 apiVersion: apps/v1
@@ -223,8 +213,6 @@ metadata:
     client-id: "5"
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: fedpinn-client
@@ -245,11 +233,11 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "10m"
+            memory: "1Gi"
+            cpu: "500m"
           limits:
-            memory: "1.5Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "2000m"
 ---
 # Streamlit dashboard (main UI)
 apiVersion: apps/v1
@@ -260,8 +248,6 @@ metadata:
     app: fedpinn-dashboard
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: fedpinn-dashboard
@@ -280,7 +266,7 @@ spec:
         resources:
           requests:
             memory: "512Mi"
-            cpu: "10m"
+            cpu: "250m"
           limits:
             memory: "2Gi"
             cpu: "1000m"
@@ -307,5 +293,5 @@ spec:
   type: LoadBalancer
   ports:
     - protocol: TCP
-      port: 80
+      port: 8501
       targetPort: 8501

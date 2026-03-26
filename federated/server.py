@@ -1,5 +1,4 @@
 import flwr as fl
-import os
 import sys
 
 def get_evaluate_fn():
@@ -20,11 +19,7 @@ def start_server(num_rounds=5, fraction_fit=1.0, fraction_evaluate=1.0):
         min_evaluate_clients=2,
         min_available_clients=2,
         evaluate_fn=get_evaluate_fn(),
-        on_fit_config_fn=lambda server_round: {
-            "server_round": server_round,
-            "proximal_mu": 0.1,
-            "proximal-mu": 0.1,
-        },
+        on_fit_config_fn=lambda server_round: {"server_round": server_round},
         proximal_mu=0.1,  # FedProx hyperparameter to handle statistical heterogeneity
     )
 
@@ -36,6 +31,6 @@ def start_server(num_rounds=5, fraction_fit=1.0, fraction_evaluate=1.0):
     )
 
 if __name__ == "__main__":
-    rounds = int(os.environ.get("NUM_ROUNDS") or (sys.argv[1] if len(sys.argv) > 1 else "3"))
+    rounds = int(sys.argv[1]) if len(sys.argv) > 1 else 3
     print(f"Starting FedProx Server for {rounds} rounds...")
     start_server(num_rounds=rounds)
