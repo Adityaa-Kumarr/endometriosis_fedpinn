@@ -1022,14 +1022,6 @@ def main():
             </div>
             ''', unsafe_allow_html=True)
             
-            # --- MEDICAL DISCLAIMER BANNER ---
-            st.markdown('''
-            <div class="medical-disclaimer">
-                <strong>⚠️ RESEARCH USE ONLY — NOT A MEDICAL DIAGNOSIS</strong><br>
-                This AI analysis is for research and educational purposes only. It is NOT a substitute for professional medical diagnosis. 
-                Always consult a qualified healthcare provider before making any medical decisions. The system may produce inaccurate results.
-            </div>
-            ''', unsafe_allow_html=True)
             
             # --- CONFIDENCE THRESHOLD CHECK ---
             if p_prob < 0.60 and p_prob > 0.40:
