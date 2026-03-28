@@ -30,10 +30,10 @@ spec:
           value: "5"
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
-            memory: "1Gi"
+            memory: "256Mi"
             cpu: "1000m"
         livenessProbe:
           tcpSocket:
@@ -89,8 +89,8 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
             memory: "2Gi"
             cpu: "2000m"
@@ -125,8 +125,8 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
             memory: "2Gi"
             cpu: "2000m"
@@ -161,8 +161,8 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
             memory: "2Gi"
             cpu: "2000m"
@@ -197,8 +197,8 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
             memory: "2Gi"
             cpu: "2000m"
@@ -233,8 +233,8 @@ spec:
           value: "fedpinn-service:8080"
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
             memory: "2Gi"
             cpu: "2000m"
@@ -265,8 +265,8 @@ spec:
         - containerPort: 8501
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
             memory: "2Gi"
             cpu: "1000m"

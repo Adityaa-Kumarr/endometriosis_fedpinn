@@ -131,15 +131,31 @@ def generate_advanced_pdf_report(patient_data, p_prob, p_std, stage_names, p_sta
     pdf.cell(0, 8, "Generative Clinical Synthesis:", ln=True)
     pdf.set_font("Helvetica", "", 10)
     
-    # Clean up markdown markdown formatting for FPDF mostly
-    clean_report = report_text.replace('**', '').replace('###', '')
+    # Clean up markdown and Unicode characters for FPDF
+    def clean_text(text):
+        if not text:
+            return ""
+        # Remove markdown bold/headers
+        text = text.replace('**', '').replace('###', '')
+        # Remove common problematic emojis/symbols
+        for sym in ['🌿', '⚠', '⚡', '🔬', '🩸', '🧬', '🩺', '✅', '❌', '📈', '📊']:
+            text = text.replace(sym, '')
+        # Ensure it's latin-1 compatible or strip remaining non-latin-1
+        try:
+            text.encode('latin-1')
+        except UnicodeEncodeError:
+            # Fallback: strip any character that can't be encoded in latin-1 (FPDF default)
+            text = "".join(c for c in text if ord(c) < 256)
+        return text
+
+    clean_report = clean_text(report_text)
     pdf.multi_cell(0, 6, clean_report)
     pdf.ln(5)
     
     pdf.set_font("Helvetica", "B", 12)
     pdf.cell(0, 8, "Personal Actionable Plan:", ln=True)
     pdf.set_font("Helvetica", "", 10)
-    clean_plan = patient_plan.replace('**', '').replace('###', '').replace('🌿', '')
+    clean_plan = clean_text(patient_plan)
     pdf.multi_cell(0, 6, clean_plan)
     
     

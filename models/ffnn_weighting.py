@@ -6,7 +6,7 @@ class FeatureWeightingFFNN(nn.Module):
     Feed-Forward Neural Network to compute feature importance weights 
     from multi-modal data (clinical, hormonal, ultrasound embeddings).
     """
-    def __init__(self, clinical_dim=12, us_dim=128, genomic_dim=256, path_dim=64, sensor_dim=32, hidden_dim=64):
+    def __init__(self, clinical_dim=9, us_dim=128, genomic_dim=256, path_dim=64, sensor_dim=32, hidden_dim=64):
         super(FeatureWeightingFFNN, self).__init__()
         
         # Encoders for each multi-modal data stream

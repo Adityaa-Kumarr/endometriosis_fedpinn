@@ -111,8 +111,10 @@ def start_client(client_id):
     train_loader, test_loader, _ = load_client_data(client_id, batch_size=BATCH_SIZE, data_dir=data_dir)
     
     # Start Client
+    server_address = os.environ.get("FLOWER_SERVER_URL", "127.0.0.1:8080")
+    print(f"Connecting to Flower server at {server_address}...")
     fl.client.start_client(
-        server_address="127.0.0.1:8080",
+        server_address=server_address,
         client=EndometriosisClient(net, train_loader, test_loader).to_client(),
     )
 

@@ -142,7 +142,7 @@ class EndometriosisPINN(nn.Module):
         return torch.mean(penalty ** 2)
 
 class FullFedPINNModel(nn.Module):
-    def __init__(self, ffnn_model=None, pinn_model=None, clinical_dim=12, us_dim=128, genomic_dim=256, path_dim=64, sensor_dim=32):
+    def __init__(self, ffnn_model=None, pinn_model=None, clinical_dim=9, us_dim=128, genomic_dim=256, path_dim=64, sensor_dim=32):
         super(FullFedPINNModel, self).__init__()
         from models.ffnn_weighting import FeatureWeightingFFNN
         self.ffnn = ffnn_model if ffnn_model else FeatureWeightingFFNN(clinical_dim, us_dim, genomic_dim, path_dim, sensor_dim)
