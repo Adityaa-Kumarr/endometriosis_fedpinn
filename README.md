@@ -60,7 +60,7 @@ endometriosis_fedpinn/
    - **Source:** [Zenodo](https://zenodo.org/record/8220727)
    - **Description:** Well-organized records from over 10,000 patients covering symptoms, diagnoses, and health details. Essential for statistical simulations.
 
-6. **Endometriosis Diagnosis Statistics (ONS)** `[Patient Records]`
+6. **Endometriosis Diagnosis Statistics (ONS)** `[Patients Records]`
    - **Source:** [ONS](https://www.ons.gov.uk)
    - **Description:** Public demographic dataset including diagnosis details by age, ethnicity, and region for fair and inclusive modeling.
 
@@ -76,7 +76,7 @@ endometriosis_fedpinn/
    - **Source:** [PubMed](https://pubmed.ncbi.nlm.nih.gov/30369943)
    - **Description:** Maps gene interactions linked to endometriosis, supporting molecular modeling inside the Twin.
 
-10. **Gut vs. Cervical Microbiota Profiling** `[Pathology Report]`
+10. **Gut vs. Cervical Microbiota Profiling** `[Pathology Reports]`
     - **Source:** [Frontiers](https://www.frontiersin.org/articles/10.3389/fcimb.2021.788836/full)
     - **Description:** Studies gut and cervical bacteria to help find non-invasive biomarkers using microbiome patterns.
 
